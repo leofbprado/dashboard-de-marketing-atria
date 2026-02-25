@@ -1,0 +1,63 @@
+name: Fix Nginx Config
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fix-nginx:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.HETZNER_SSH_KEY }}
+
+      - name: Add known hosts
+        run: ssh-keyscan -H ${{ secrets.HETZNER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Fix Nginx to proxy Next.js
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HETZNER_HOST }}
+          username: ${{ secrets.HETZNER_USER }}
+          key: ${{ secrets.HETZNER_SSH_KEY }}
+          script: |
+            # Backup current config
+            sudo cp /etc/nginx/sites-enabled/default /etc/nginx/sites-enabled/default.bak.$(date +%s) 2>/dev/null || true
+            CONF=$(ls /etc/nginx/sites-enabled/ | head -1)
+            sudo cp /etc/nginx/sites-enabled/$CONF /etc/nginx/sites-enabled/$CONF.bak.$(date +%s)
+            
+            # Write new config
+            sudo tee /etc/nginx/sites-enabled/$CONF > /dev/null << 'NGINXEOF'
+            server {
+                listen 80;
+                server_name marketing.atriaveiculos.com.br;
+                return 301 https://$host$request_uri;
+            }
+
+            server {
+                listen 443 ssl;
+                server_name marketing.atriaveiculos.com.br;
+
+                ssl_certificate /etc/letsencrypt/live/marketing.atriaveiculos.com.br/fullchain.pem;
+                ssl_certificate_key /etc/letsencrypt/live/marketing.atriaveiculos.com.br/privkey.pem;
+                include /etc/letsencrypt/options-ssl-nginx.conf;
+                ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+                location / {
+                    proxy_pass http://127.0.0.1:3000;
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade $http_upgrade;
+                    proxy_set_header Connection 'upgrade';
+                    proxy_set_header Host $host;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                    proxy_cache_bypass $http_upgrade;
+                }
+            }
+            NGINXEOF
+            
+            # Test and reload
+            sudo nginx -t && sudo systemctl reload nginx
+            echo 'Nginx config updated and reloaded successfully'
