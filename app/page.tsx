@@ -32,7 +32,7 @@ export default function DashboardPage() {
               </TabsTrigger>
               <TabsTrigger value="settings" className="gap-1.5 text-xs">
                 <Settings2 className="size-3.5" />
-                <span className="hidden sm:inline">Configuracoes</span>
+                <span className="hidden sm:inline">Motor Config</span>
               </TabsTrigger>
               <TabsTrigger value="security" className="gap-1.5 text-xs">
                 <ShieldCheck className="size-3.5" />
