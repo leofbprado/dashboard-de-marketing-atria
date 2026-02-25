@@ -22,13 +22,21 @@ jobs:
           username: ${{ secrets.HETZNER_USER }}
           key: ${{ secrets.HETZNER_SSH_KEY }}
           script: |
-            # Backup current config
-            sudo cp /etc/nginx/sites-enabled/default /etc/nginx/sites-enabled/default.bak.$(date +%s) 2>/dev/null || true
-            CONF=$(ls /etc/nginx/sites-enabled/ | head -1)
-            sudo cp /etc/nginx/sites-enabled/$CONF /etc/nginx/sites-enabled/$CONF.bak.$(date +%s)
+            echo '=== List all nginx configs ==='
+            ls -la /etc/nginx/sites-enabled/
+            ls -la /etc/nginx/conf.d/
             
-            # Write new config
-            sudo tee /etc/nginx/sites-enabled/$CONF > /dev/null << 'NGINXEOF'
+            # Remove ALL configs in sites-enabled (backup first)
+            sudo mkdir -p /etc/nginx/backup-configs
+            sudo cp /etc/nginx/sites-enabled/* /etc/nginx/backup-configs/ 2>/dev/null || true
+            sudo rm -f /etc/nginx/sites-enabled/*
+            
+            # Also check and clean conf.d
+            sudo cp /etc/nginx/conf.d/* /etc/nginx/backup-configs/ 2>/dev/null || true
+            sudo rm -f /etc/nginx/conf.d/*.conf
+            
+            # Write single clean config
+            sudo tee /etc/nginx/sites-enabled/marketing > /dev/null << 'NGINXEOF'
             server {
                 listen 80;
                 server_name marketing.atriaveiculos.com.br;
@@ -58,6 +66,11 @@ jobs:
             }
             NGINXEOF
             
+            echo '=== New config ==='
+            ls -la /etc/nginx/sites-enabled/
+            cat /etc/nginx/sites-enabled/marketing
+            
             # Test and reload
-            sudo nginx -t && sudo systemctl reload nginx
-            echo 'Nginx config updated and reloaded successfully'
+            sudo nginx -t 2>&1
+            sudo systemctl reload nginx
+            echo 'Done - Nginx reloaded'
