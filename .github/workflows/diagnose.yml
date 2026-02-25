@@ -12,40 +12,27 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.HETZNER_SSH_KEY }}
 
-      - name: Add host to known_hosts
+      - name: Add known hosts
         run: ssh-keyscan -H ${{ secrets.HETZNER_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Deep diagnose
+      - name: Diagnose server
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HETZNER_HOST }}
           username: ${{ secrets.HETZNER_USER }}
           key: ${{ secrets.HETZNER_SSH_KEY }}
           script: |
-            echo "=== ALL PM2 PROCESSES (all users) ==="
-            pm2 jlist 2>/dev/null | python3 -m json.tool 2>/dev/null || pm2 list
-            echo ""
-            echo "=== PROCESS TREE ON PORT 3000 ==="
-            lsof -i :3000 2>/dev/null || ss -tlnp | grep 3000
-            echo ""
-            echo "=== DEPLOY PATH ==="
-            echo "Path: ${{ secrets.DEPLOY_PATH }}"
-            ls -la ${{ secrets.DEPLOY_PATH }}/ 2>/dev/null | head -30
-            echo ""
-            echo "=== DEPLOY PATH package.json ==="
-            cat ${{ secrets.DEPLOY_PATH }}/package.json 2>/dev/null | head -20
-            echo ""
-            echo "=== PM2 CWD FOR DASHBOARD ==="
-            pm2 describe dashboard 2>/dev/null | grep -E 'cwd|script|exec' || echo "no dashboard"
-            echo ""
-            echo "=== FIND ALL next.config FILES ==="
-            find / -name "next.config.*" -not -path "*/node_modules/*" 2>/dev/null | head -20
-            echo ""
-            echo "=== FIND ALL package.json WITH NEXT ==="
-            find / -maxdepth 5 -name "package.json" -not -path "*/node_modules/*" -exec grep -l "next" {} \; 2>/dev/null | head -20
-            echo ""
-            echo "=== PM2 ECOSYSTEM FILES ==="
-            find / -name "ecosystem.config.*" -not -path "*/node_modules/*" 2>/dev/null | head -10
-            echo ""
-            echo "=== SYSTEMD SERVICES ==="
-            systemctl list-units --type=service --state=running 2>/dev/null | grep -iE 'next|node|motor|marketing' || echo "none found"
+            echo '=== PM2 show dashboard ==='
+            pm2 show dashboard
+            echo '=== PM2 logs dashboard (last 20) ==='
+            pm2 logs dashboard --lines 20 --nostream
+            echo '=== Files in deploy path ==='
+            ls -la ${{ secrets.DEPLOY_PATH }}/
+            echo '=== package.json name ==='
+            cat ${{ secrets.DEPLOY_PATH }}/package.json | head -5
+            echo '=== .next folder ==='
+            ls -la ${{ secrets.DEPLOY_PATH }}/.next/ 2>/dev/null || echo 'No .next folder'
+            echo '=== curl localhost:3000 title ==='
+            curl -s http://localhost:3000 | head -50
+            echo '=== Nginx config ==='
+            cat /etc/nginx/sites-enabled/* 2>/dev/null || cat /etc/nginx/conf.d/* 2>/dev/null || echo 'No nginx config found'
