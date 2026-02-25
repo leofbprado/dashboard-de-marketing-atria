@@ -8,7 +8,7 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'Atria Veiculos - Motor V3.0',
+  title: 'AutoDrive Marketing',
   description: 'Dashboard de marketing para concessionaria de veiculos',
   generator: 'v0.app',
   icons: {

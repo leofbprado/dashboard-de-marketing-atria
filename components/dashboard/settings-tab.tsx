@@ -90,9 +90,9 @@ export function SettingsTab() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h2 className="text-lg font-semibold text-foreground">Motor Config</h2>
+        <h2 className="text-lg font-semibold text-foreground">Configuracoes</h2>
         <p className="text-sm text-muted-foreground">
-          Parametros operacionais do Motor V3.0
+          Controle de automacoes e limites operacionais
         </p>
       </div>
 
@@ -105,7 +105,7 @@ export function SettingsTab() {
                 <Settings2 className="size-4 text-primary" />
               </div>
               <div>
-                <CardTitle className="text-sm">Configuracoes de Automacao</CardTitle>
+                <CardTitle className="text-sm">Automacoes</CardTitle>
                 <CardDescription className="text-xs">
                   {activeCount} de {toggles.length} ativas
                 </CardDescription>
@@ -132,9 +132,9 @@ export function SettingsTab() {
                 <SlidersHorizontal className="size-4 text-warning" />
               </div>
               <div>
-                <CardTitle className="text-sm">Parametros Operacionais</CardTitle>
+                <CardTitle className="text-sm">Limites Operacionais</CardTitle>
                 <CardDescription className="text-xs">
-                  Limites e configuracoes do sistema
+                  Defina os limites para pausa automatica
                 </CardDescription>
               </div>
             </div>

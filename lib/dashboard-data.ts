@@ -2,15 +2,10 @@
 export interface Campaign {
   id: string
   title: string
-  platform: "meta" | "google" | "meta+google"
+  platform: "meta" | "google"
   budget: string
-  status: "ACTIVE" | "PAUSED"
-  week: string // SEM XX
-  theme: string
-  hook: string
-  pillar: string // Segurança, Tempo, Preço etc
-  progress: { current: number; total: number } // 3/5
-  metrics?: { impressions: string; cpl: string } // quando publicado
+  status: string
+  dueDate: string
 }
 
 export interface KpiCard {
@@ -42,16 +37,17 @@ export interface SecurityItem {
   description: string
   checked: boolean
   priority: "alta" | "media" | "baixa"
-  category: "hetzner" | "meta-ads" | "google-ads" | "lp-openclaw"
 }
 
 // ─── Kanban Phases ───────────────────────────────────────
 export const kanbanPhases = [
-  { id: "briefing", label: "Briefing", responsible: "Estrategista", color: "bg-muted-foreground/20" },
-  { id: "criativo", label: "Criativo", responsible: "Roteirista+Produtor", color: "bg-info/20" },
-  { id: "aprovacao", label: "Aprovacao", responsible: "Leo", color: "bg-warning/20" },
-  { id: "publicado", label: "Publicado", responsible: "Robozinho", color: "bg-chart-4/20" },
-  { id: "monitor", label: "Monitor 48h", responsible: "Analista", color: "bg-success/20" },
+  { id: "briefing", label: "Briefing", color: "bg-muted-foreground/20" },
+  { id: "criacao", label: "Criacao", color: "bg-info/20" },
+  { id: "revisao", label: "Revisao", color: "bg-warning/20" },
+  { id: "aprovacao", label: "Aprovacao", color: "bg-chart-4/20" },
+  { id: "publicacao", label: "Publicacao", color: "bg-primary/20" },
+  { id: "monitoramento", label: "Monitoramento", color: "bg-success/20" },
+  { id: "concluido", label: "Concluido", color: "bg-success/30" },
 ] as const
 
 export type KanbanPhaseId = (typeof kanbanPhases)[number]["id"]
@@ -59,114 +55,83 @@ export type KanbanPhaseId = (typeof kanbanPhases)[number]["id"]
 // ─── Kanban Demo Data ────────────────────────────────────
 export const initialCampaigns: Record<KanbanPhaseId, Campaign[]> = {
   briefing: [
-    { id: "1", title: "Seguranca - Protecao Total", platform: "meta", budget: "R$ 15.000", status: "ACTIVE", week: "SEM 12", theme: "Seguranca", hook: "Protecao Total", pillar: "Seguranca", progress: { current: 1, total: 5 } },
-    { id: "2", title: "Tempo - Rapido e Facil", platform: "google", budget: "R$ 8.500", status: "ACTIVE", week: "SEM 12", theme: "Tempo", hook: "Rapido e Facil", pillar: "Tempo", progress: { current: 1, total: 5 } },
+    { id: "1", title: "Lancamento SUV 2026", platform: "meta", budget: "R$ 15.000", status: "Nova", dueDate: "10/03" },
+    { id: "2", title: "Promocao Seminovos", platform: "google", budget: "R$ 8.500", status: "Nova", dueDate: "12/03" },
   ],
-  criativo: [
-    { id: "3", title: "Preco - Oferta Imperdivel", platform: "meta", budget: "R$ 22.000", status: "ACTIVE", week: "SEM 11", theme: "Preco", hook: "Oferta Imperdivel", pillar: "Preco", progress: { current: 2, total: 5 } },
-    { id: "4", title: "Qualidade - Excelencia Garantida", platform: "google", budget: "R$ 12.000", status: "ACTIVE", week: "SEM 11", theme: "Qualidade", hook: "Excelencia Garantida", pillar: "Qualidade", progress: { current: 3, total: 5 } },
+  criacao: [
+    { id: "3", title: "Feirão de Marco", platform: "meta", budget: "R$ 22.000", status: "Em andamento", dueDate: "08/03" },
+    { id: "4", title: "Test Drive Eletricos", platform: "google", budget: "R$ 12.000", status: "Em andamento", dueDate: "15/03" },
+  ],
+  revisao: [
+    { id: "5", title: "Black Week Pecas", platform: "meta", budget: "R$ 5.000", status: "Pendente", dueDate: "07/03" },
   ],
   aprovacao: [
-    { id: "5", title: "Conforto - Dirija com Estilo", platform: "meta+google", budget: "R$ 18.000", status: "PAUSED", week: "SEM 10", theme: "Conforto", hook: "Dirija com Estilo", pillar: "Conforto", progress: { current: 4, total: 5 } },
+    { id: "6", title: "Consorcio Especial", platform: "google", budget: "R$ 18.000", status: "Aguardando", dueDate: "09/03" },
+    { id: "7", title: "Revisão Programada", platform: "meta", budget: "R$ 6.500", status: "Aguardando", dueDate: "11/03" },
   ],
-  publicado: [
-    { id: "6", title: "Economia - Poupe Dinheiro", platform: "meta", budget: "R$ 25.000", status: "ACTIVE", week: "SEM 09", theme: "Economia", hook: "Poupe Dinheiro", pillar: "Economia", progress: { current: 5, total: 5 }, metrics: { impressions: "1.2M", cpl: "R$ 67,74" } },
-    { id: "7", title: "Inovacao - Tecnologia Avancada", platform: "google", budget: "R$ 20.000", status: "ACTIVE", week: "SEM 09", theme: "Inovacao", hook: "Tecnologia Avancada", pillar: "Inovacao", progress: { current: 5, total: 5 }, metrics: { impressions: "890K", cpl: "R$ 69,84" } },
+  publicacao: [
+    { id: "8", title: "Campanha Institucional", platform: "meta", budget: "R$ 30.000", status: "Agendada", dueDate: "06/03" },
   ],
-  monitor: [
-    { id: "8", title: "Sustentabilidade - Verde e Limpo", platform: "meta", budget: "R$ 30.000", status: "ACTIVE", week: "SEM 08", theme: "Sustentabilidade", hook: "Verde e Limpo", pillar: "Sustentabilidade", progress: { current: 5, total: 5 }, metrics: { impressions: "1.5M", cpl: "R$ 65,00" } },
+  monitoramento: [
+    { id: "9", title: "Leads Financiamento", platform: "google", budget: "R$ 20.000", status: "Ativa", dueDate: "28/02" },
+    { id: "10", title: "Remarketing Visitantes", platform: "meta", budget: "R$ 10.000", status: "Ativa", dueDate: "01/03" },
+  ],
+  concluido: [
+    { id: "11", title: "Natal 2025", platform: "meta", budget: "R$ 25.000", status: "Finalizada", dueDate: "25/12" },
   ],
 }
 
 // ─── KPI Demo Data ──────────────────────────────────────
-export const topKpiCards = [
-  { label: "Gasto Total", value: "R$ 146.800", change: 8.5, trend: "up" as const },
-  { label: "Conversas (WhatsApp)", value: "2.139", change: 15.2, trend: "up" as const },
-  { label: "CPL Medio", value: "R$ 68,60", change: -5.1, trend: "down" as const },
-  { label: "Campanhas (total)", value: "24", change: 12.0, trend: "up" as const },
-  { label: "Quarentena (ativo)", value: "2/4", change: 0, trend: "neutral" as const },
+export const metaKpis: KpiCard[] = [
+  { label: "Investimento", value: "R$ 84.500", change: 12.3, trend: "up", platform: "meta" },
+  { label: "Impressoes", value: "1.2M", change: 8.7, trend: "up", platform: "meta" },
+  { label: "Cliques", value: "34.821", change: -2.1, trend: "down", platform: "meta" },
+  { label: "CTR", value: "2,89%", change: 0.3, trend: "up", platform: "meta" },
+  { label: "CPM", value: "R$ 18,40", change: -5.2, trend: "down", platform: "meta" },
+  { label: "Leads", value: "1.247", change: 15.6, trend: "up", platform: "meta" },
+  { label: "CPL", value: "R$ 67,74", change: -8.3, trend: "down", platform: "meta" },
+  { label: "ROAS", value: "4.2x", change: 11.0, trend: "up", platform: "meta" },
 ]
 
-export interface CampaignAnalysis {
-  campaign: string
-  gasto: string
-  conv: number
-  cpl: string
-  alcance: string
-  freq: number
-  ctr: string
-  status: string
-  diagnostico: string
-}
-
-export const metaAdsAnalysis: CampaignAnalysis[] = [
-  { campaign: "Seguranca - Protecao Total", gasto: "R$ 15.000", conv: 124, cpl: "R$ 120,97", alcance: "45.2K", freq: 2.3, ctr: "2.1%", status: "Otimo", diagnostico: "Performance acima da media" },
-  { campaign: "Preco - Oferta Imperdivel", gasto: "R$ 22.000", conv: 89, cpl: "R$ 247,19", alcance: "78.5K", freq: 1.8, ctr: "1.8%", status: "Ruim", diagnostico: "CPL elevado, revisar criativos" },
-  { campaign: "Economia - Poupe Dinheiro", gasto: "R$ 25.000", conv: 247, cpl: "R$ 101,21", alcance: "92.1K", freq: 2.1, ctr: "2.5%", status: "Bom", diagnostico: "Alcance bom, otimizar para conversoes" },
-  { campaign: "Conforto - Dirija com Estilo", gasto: "R$ 18.000", conv: 156, cpl: "R$ 115,38", alcance: "67.8K", freq: 2.0, ctr: "2.3%", status: "Otimo", diagnostico: "Equilibrio perfeito" },
+export const googleKpis: KpiCard[] = [
+  { label: "Investimento", value: "R$ 62.300", change: 5.8, trend: "up", platform: "google" },
+  { label: "Impressoes", value: "890K", change: 3.2, trend: "up", platform: "google" },
+  { label: "Cliques", value: "28.456", change: 7.4, trend: "up", platform: "google" },
+  { label: "CTR", value: "3,19%", change: 1.1, trend: "up", platform: "google" },
+  { label: "CPC", value: "R$ 2,19", change: -3.7, trend: "down", platform: "google" },
+  { label: "Conversoes", value: "892", change: 22.1, trend: "up", platform: "google" },
+  { label: "CPA", value: "R$ 69,84", change: -12.5, trend: "down", platform: "google" },
+  { label: "ROAS", value: "5.1x", change: 18.3, trend: "up", platform: "google" },
 ]
 
 // ─── Settings Demo Data ─────────────────────────────────
 export const initialToggles: SettingToggle[] = [
-  { id: "criacao-automatica", label: "Criacao automatica", description: "Gerar campanhas automaticamente baseado em briefing", enabled: true },
-  { id: "ativacao-automatica", label: "Ativacao automatica", description: "Publicar campanhas assim que aprovadas", enabled: false },
-  { id: "escalar-orcamento", label: "Escalar orcamento", description: "Aumentar investimento em campanhas performaticas", enabled: true },
-  { id: "duplicacao-permitida", label: "Duplicacao permitida", description: "Permitir duplicacao de campanhas bem-sucedidas", enabled: true },
-  { id: "editar-existentes", label: "Editar existentes", description: "Modificar campanhas ja publicadas", enabled: false },
-  { id: "quarentena-ativa", label: "Quarentena ativa", description: "Sistema de quarentena para campanhas ruins", enabled: true },
+  { id: "auto-pause", label: "Pausa automatica", description: "Pausar campanhas quando CPL ultrapassar limite", enabled: true },
+  { id: "notifications", label: "Notificacoes em tempo real", description: "Alertas via e-mail quando metricas caem", enabled: true },
+  { id: "auto-budget", label: "Redistribuicao de verba", description: "Realocar automaticamente para campanhas com melhor ROAS", enabled: false },
+  { id: "ab-testing", label: "Teste A/B automatico", description: "Criar variacoes de criativos automaticamente", enabled: true },
+  { id: "report-weekly", label: "Relatorio semanal", description: "Enviar resumo toda segunda-feira as 8h", enabled: true },
+  { id: "competitor-watch", label: "Monitoramento concorrencia", description: "Rastrear anuncios de concorrentes na regiao", enabled: false },
 ]
 
 export const initialLimits: OperationalLimit[] = [
-  { id: "orcamento-max-campanha", label: "Orcamento max/campanha", value: 25000, unit: "R$", max: 50000 },
-  { id: "max-campanhas-meta-semana", label: "Max campanhas Meta/semana", value: 5, unit: "", max: 20 },
-  { id: "max-campanhas-google-semana", label: "Max campanhas Google/semana", value: 3, unit: "", max: 15 },
-  { id: "cooldown-campanhas", label: "Cooldown entre campanhas (h)", value: 24, unit: "h", max: 168 },
-  { id: "gasto-diario-total-max", label: "Gasto diario total max", value: 10000, unit: "R$", max: 50000 },
-  { id: "semanas-restantes-quarentena", label: "Semanas restantes quarentena", value: 2, unit: "", max: 4 },
+  { id: "max-cpl", label: "CPL maximo", value: 85, unit: "R$", max: 200 },
+  { id: "min-roas", label: "ROAS minimo", value: 3, unit: "x", max: 10 },
+  { id: "daily-budget", label: "Verba diaria maxima", value: 5000, unit: "R$", max: 20000 },
+  { id: "max-cpc", label: "CPC maximo", value: 4, unit: "R$", max: 15 },
+  { id: "frequency-cap", label: "Frequencia maxima", value: 5, unit: "x/semana", max: 15 },
 ]
 
 // ─── Security Checklist ─────────────────────────────────
 export const initialSecurityItems: SecurityItem[] = [
-  // Hetzner
-  { id: "hetzner-1", label: "Servidor provisionado", description: "Instancia VPS criada no Hetzner", checked: true, priority: "alta", category: "hetzner" },
-  { id: "hetzner-2", label: "Firewall configurado", description: "Regras de firewall aplicadas", checked: true, priority: "alta", category: "hetzner" },
-  { id: "hetzner-3", label: "SSL instalado", description: "Certificado SSL Let's Encrypt ativo", checked: true, priority: "alta", category: "hetzner" },
-  { id: "hetzner-4", label: "Backup automatico", description: "Sistema de backup diario configurado", checked: false, priority: "media", category: "hetzner" },
-  { id: "hetzner-5", label: "Monitoramento ativo", description: "Alertas de uptime e performance", checked: true, priority: "media", category: "hetzner" },
-  { id: "hetzner-6", label: "Atualizacoes de sistema", description: "SO e pacotes atualizados", checked: false, priority: "baixa", category: "hetzner" },
-  { id: "hetzner-7", label: "Logs centralizados", description: "Sistema de logs configurado", checked: true, priority: "baixa", category: "hetzner" },
-  { id: "hetzner-8", label: "Seguranca SSH", description: "Chaves SSH e desabilitacao root", checked: true, priority: "alta", category: "hetzner" },
-  { id: "hetzner-9", label: "Fail2Ban ativo", description: "Protecao contra brute force", checked: true, priority: "media", category: "hetzner" },
-
-  // Meta Ads
-  { id: "meta-1", label: "Conta Business Manager", description: "Conta Meta Business criada e verificada", checked: true, priority: "alta", category: "meta-ads" },
-  { id: "meta-2", label: "Pixel Meta instalado", description: "Pixel ativo em todas as paginas", checked: true, priority: "alta", category: "meta-ads" },
-  { id: "meta-3", label: "Conversion API", description: "API de conversoes configurada", checked: true, priority: "alta", category: "meta-ads" },
-  { id: "meta-4", label: "Catalogo de produtos", description: "Catalogo atualizado no Commerce Manager", checked: false, priority: "media", category: "meta-ads" },
-  { id: "meta-5", label: "Audiencias personalizadas", description: "Publicos criados e segmentados", checked: true, priority: "media", category: "meta-ads" },
-  { id: "meta-6", label: "2FA ativado", description: "Autenticacao em dois fatores", checked: true, priority: "alta", category: "meta-ads" },
-  { id: "meta-7", label: "Metodo de pagamento", description: "Cartao valido e limites definidos", checked: true, priority: "alta", category: "meta-ads" },
-  { id: "meta-8", label: "Permissoes de acesso", description: "Usuarios com permissoes corretas", checked: false, priority: "media", category: "meta-ads" },
-  { id: "meta-9", label: "Dominio verificado", description: "Dominio da empresa verificado", checked: true, priority: "alta", category: "meta-ads" },
-
-  // Google Ads
-  { id: "google-1", label: "Conta Google Ads", description: "Conta criada e verificada", checked: true, priority: "alta", category: "google-ads" },
-  { id: "google-2", label: "Google Tag Manager", description: "GTM instalado no site", checked: true, priority: "alta", category: "google-ads" },
-  { id: "google-3", label: "Google Analytics", description: "GA4 configurado e ativo", checked: true, priority: "alta", category: "google-ads" },
-  { id: "google-4", label: "Conversoes rastreadas", description: "Eventos de conversao definidos", checked: true, priority: "alta", category: "google-ads" },
-  { id: "google-5", label: "Extensoes de anuncio", description: "Sitelink, local e chamadas configuradas", checked: false, priority: "media", category: "google-ads" },
-  { id: "google-6", label: "Orcamento definido", description: "Limites diarios e mensais", checked: true, priority: "media", category: "google-ads" },
-  { id: "google-7", label: "Palavras-chave negativas", description: "Lista de negativas atualizada", checked: false, priority: "media", category: "google-ads" },
-  { id: "google-8", label: "Remarketing ativo", description: "Listas de remarketing criadas", checked: true, priority: "baixa", category: "google-ads" },
-  { id: "google-9", label: "Relatorios automaticos", description: "Dashboards e alertas configurados", checked: false, priority: "baixa", category: "google-ads" },
-
-  // LP + OpenClaw
-  { id: "lp-1", label: "Landing Pages criadas", description: "Pags de destino otimizadas", checked: true, priority: "alta", category: "lp-openclaw" },
-  { id: "lp-2", label: "Formularios funcionais", description: "Captura de leads funcionando", checked: true, priority: "alta", category: "lp-openclaw" },
-  { id: "lp-3", label: "Integracao WhatsApp", description: "Botao de contato via WhatsApp", checked: true, priority: "alta", category: "lp-openclaw" },
-  { id: "lp-4", label: "OpenClaw configurado", description: "Sistema de automacao ativo", checked: true, priority: "alta", category: "lp-openclaw" },
-  { id: "lp-5", label: "Templates padronizados", description: "Modelos de LP consistentes", checked: false, priority: "media", category: "lp-openclaw" },
-  { id: "lp-6", label: "Teste A/B ativo", description: "Otimizacao de conversao", checked: true, priority: "media", category: "lp-openclaw" },
-  { id: "lp-7", label: "Analytics integrado", description: "Rastreamento de performance", checked: true, priority: "media", category: "lp-openclaw" },
-  { id: "lp-8", label: "Backup de dados", description: "Leads exportados regularmente", checked: false, priority: "baixa", category: "lp-openclaw" },
+  { id: "pixel-meta", label: "Pixel Meta instalado", description: "Verificar se o pixel esta ativo em todas as paginas do site", checked: true, priority: "alta" },
+  { id: "gtag", label: "Google Tag configurada", description: "Tag de conversao do Google Ads instalada corretamente", checked: true, priority: "alta" },
+  { id: "api-tokens", label: "Tokens API renovados", description: "Tokens de acesso Meta e Google dentro da validade", checked: false, priority: "alta" },
+  { id: "2fa", label: "2FA ativado nas contas", description: "Autenticacao em dois fatores em Meta Business e Google Ads", checked: true, priority: "alta" },
+  { id: "access-review", label: "Revisao de acessos", description: "Verificar permissoes de colaboradores nas plataformas", checked: false, priority: "media" },
+  { id: "conversion-api", label: "Conversion API ativa", description: "API de conversoes do Meta configurada para server-side tracking", checked: true, priority: "media" },
+  { id: "utm-standard", label: "Padrao UTM definido", description: "Convencao de nomes UTM documentada e validada", checked: true, priority: "media" },
+  { id: "backup-audiences", label: "Backup de publicos", description: "Publicos personalizados exportados e armazenados", checked: false, priority: "baixa" },
+  { id: "domain-verify", label: "Dominio verificado", description: "Dominio da concessionaria verificado no Meta Business", checked: true, priority: "alta" },
+  { id: "billing-check", label: "Metodo de pagamento", description: "Cartao de credito e limites validados nas plataformas", checked: true, priority: "media" },
 ]

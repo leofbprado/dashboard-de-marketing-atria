@@ -17,14 +17,14 @@ export function DashboardHeader() {
         </div>
         <div>
           <h1 className="text-xl font-bold text-foreground tracking-tight text-balance">
-            Atria Veiculos - Motor V3.0
+            AutoDrive Marketing
           </h1>
           <p className="text-xs text-muted-foreground capitalize">{today}</p>
         </div>
       </div>
       <div className="flex items-center gap-2 mt-2 md:mt-0">
         <Badge variant="outline" className="text-xs font-normal">
-          QUARENTENA 2/4
+          Concessionaria Centro
         </Badge>
         <div className="size-2 rounded-full bg-success animate-pulse" />
         <span className="text-xs text-muted-foreground">Online</span>

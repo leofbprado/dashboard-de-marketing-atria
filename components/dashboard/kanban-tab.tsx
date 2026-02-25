@@ -10,31 +10,19 @@ import {
   type KanbanPhaseId,
   type Campaign,
 } from "@/lib/dashboard-data"
-import { GripVertical, Calendar, DollarSign, Eye, Target } from "lucide-react"
-import { Progress } from "@/components/ui/progress"
+import { GripVertical, Calendar, DollarSign } from "lucide-react"
 
-function PlatformBadge({ platform }: { platform: "meta" | "google" | "meta+google" }) {
-  const getPlatformConfig = (platform: string) => {
-    switch (platform) {
-      case "meta":
-        return { label: "META", className: "border-chart-1/30 bg-chart-1/10 text-chart-1" }
-      case "google":
-        return { label: "GOOGLE", className: "border-chart-2/30 bg-chart-2/10 text-chart-2" }
-      case "meta+google":
-        return { label: "META+GOOGLE", className: "border-chart-3/30 bg-chart-3/10 text-chart-3" }
-      default:
-        return { label: platform.toUpperCase(), className: "border-muted-foreground/30 bg-muted/10 text-muted-foreground" }
-    }
-  }
-
-  const config = getPlatformConfig(platform)
-
+function PlatformBadge({ platform }: { platform: "meta" | "google" }) {
   return (
     <Badge
       variant="outline"
-      className={`${config.className} text-[10px] px-1.5 py-0`}
+      className={
+        platform === "meta"
+          ? "border-chart-1/30 bg-chart-1/10 text-chart-1 text-[10px] px-1.5 py-0"
+          : "border-chart-2/30 bg-chart-2/10 text-chart-2 text-[10px] px-1.5 py-0"
+      }
     >
-      {config.label}
+      {platform === "meta" ? "Meta" : "Google"}
     </Badge>
   )
 }
@@ -46,8 +34,6 @@ function CampaignCard({
   campaign: Campaign
   onDragStart: (e: React.DragEvent, campaignId: string, fromPhase: string) => void
 }) {
-  const progressPercentage = (campaign.progress.current / campaign.progress.total) * 100
-
   return (
     <div
       draggable
@@ -57,51 +43,23 @@ function CampaignCard({
       <Card className="border-border/60 shadow-none hover:shadow-sm transition-shadow py-3 gap-3">
         <CardContent className="px-3 py-0 flex flex-col gap-2">
           <div className="flex items-start justify-between gap-2">
-            <div className="flex flex-col gap-1">
-              <p className="text-xs text-muted-foreground font-medium">{campaign.week}</p>
-              <p className="text-sm font-medium leading-tight text-foreground">
-                {campaign.theme} - {campaign.hook}
-              </p>
-            </div>
+            <p className="text-sm font-medium leading-tight text-foreground">
+              {campaign.title}
+            </p>
             <GripVertical className="size-3.5 text-muted-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-0.5" />
           </div>
-
-          <div className="flex items-center gap-2 flex-wrap">
-            <PlatformBadge platform={campaign.platform} />
-            <Badge
-              variant={campaign.status === "ACTIVE" ? "default" : "secondary"}
-              className="text-[10px] px-1.5 py-0"
-            >
-              {campaign.status}
-            </Badge>
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-              {campaign.pillar}
-            </Badge>
-          </div>
-
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Progresso:</span>
-            <Progress value={progressPercentage} className="flex-1 h-1.5" />
-            <span className="text-xs text-muted-foreground">{campaign.progress.current}/{campaign.progress.total}</span>
+            <PlatformBadge platform={campaign.platform} />
+            <span className="text-[10px] text-muted-foreground">{campaign.status}</span>
           </div>
-
-          {campaign.metrics && (
-            <div className="flex items-center justify-between text-muted-foreground">
-              <span className="flex items-center gap-1 text-xs">
-                <Eye className="size-3" />
-                {campaign.metrics.impressions}
-              </span>
-              <span className="flex items-center gap-1 text-xs">
-                <Target className="size-3" />
-                {campaign.metrics.cpl}
-              </span>
-            </div>
-          )}
-
           <div className="flex items-center justify-between text-muted-foreground">
             <span className="flex items-center gap-1 text-xs">
               <DollarSign className="size-3" />
               {campaign.budget}
+            </span>
+            <span className="flex items-center gap-1 text-xs">
+              <Calendar className="size-3" />
+              {campaign.dueDate}
             </span>
           </div>
         </CardContent>
@@ -183,12 +141,11 @@ export function KanbanTab() {
                 onDragLeave={handleDragLeave}
                 onDrop={(e) => handleDrop(e, phase.id)}
               >
-                <div className="flex flex-col items-center gap-1 px-1">
+                <div className="flex items-center justify-between px-1">
                   <div className="flex items-center gap-2">
                     <div className={`size-2 rounded-full ${phase.color}`} />
                     <span className="text-xs font-medium text-foreground">{phase.label}</span>
                   </div>
-                  <span className="text-[10px] text-muted-foreground">{phase.responsible}</span>
                   <span className="text-[10px] text-muted-foreground font-medium bg-background rounded-full px-1.5 py-0.5">
                     {phaseCampaigns.length}
                   </span>
