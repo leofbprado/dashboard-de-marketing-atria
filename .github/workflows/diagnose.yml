@@ -1,0 +1,41 @@
+name: Diagnose Server
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.HETZNER_SSH_KEY }}
+
+      - name: Add host to known_hosts
+        run: ssh-keyscan -H ${{ secrets.HETZNER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Diagnose server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HETZNER_HOST }}
+          username: ${{ secrets.HETZNER_USER }}
+          key: ${{ secrets.HETZNER_SSH_KEY }}
+          script: |
+            echo "=== PM2 LIST ==="
+            pm2 list
+            echo ""
+            echo "=== PM2 DETAILS ==="
+            pm2 show dashboard 2>/dev/null || echo "No dashboard process"
+            echo ""
+            echo "=== NGINX SITES ==="
+            cat /etc/nginx/sites-enabled/* 2>/dev/null || cat /etc/nginx/conf.d/* 2>/dev/null || echo "No nginx config found"
+            echo ""
+            echo "=== DEPLOY PATH CONTENTS ==="
+            ls -la ${{ secrets.DEPLOY_PATH }}/ 2>/dev/null || echo "DEPLOY_PATH not found"
+            echo ""
+            echo "=== LISTENING PORTS ==="
+            ss -tlnp | grep -E '3000|3001|8080|80|443' || netstat -tlnp 2>/dev/null | grep -E '3000|3001|8080|80|443'
+            echo ""
+            echo "=== PM2 LOGS (last 20 lines) ==="
+            pm2 logs dashboard --lines 20 --nostream 2>/dev/null || echo "No logs"
