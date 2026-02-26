@@ -1,59 +1,133 @@
 "use client"
 
-import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { useState, useMemo } from "react"
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
 import { initialSecurityItems, type SecurityItem } from "@/lib/dashboard-data"
-import { ShieldCheck, AlertTriangle, Info } from "lucide-react"
+import {
+  ShieldCheck,
+  ShieldAlert,
+  ShieldQuestion,
+  CheckCircle2,
+  Circle,
+} from "lucide-react"
 
-function priorityConfig(priority: SecurityItem["priority"]) {
-  switch (priority) {
-    case "alta":
-      return { label: "Alta", className: "bg-destructive/10 text-destructive border-destructive/20" }
-    case "media":
-      return { label: "Media", className: "bg-warning/10 text-warning border-warning/20" }
-    case "baixa":
-      return { label: "Baixa", className: "bg-muted text-muted-foreground border-border" }
-  }
+const priorityConfig: Record<
+  SecurityItem["priority"],
+  { label: string; badgeClass: string; icon: typeof ShieldAlert; iconClass: string; bgClass: string }
+> = {
+  critica: {
+    label: "Critica",
+    badgeClass: "bg-destructive/10 text-destructive border-destructive/20",
+    icon: ShieldAlert,
+    iconClass: "text-destructive",
+    bgClass: "bg-destructive/[0.06]",
+  },
+  importante: {
+    label: "Importante",
+    badgeClass: "bg-warning/10 text-warning border-warning/20",
+    icon: ShieldCheck,
+    iconClass: "text-warning",
+    bgClass: "bg-warning/[0.06]",
+  },
+  recomendada: {
+    label: "Recomendada",
+    badgeClass: "bg-muted text-muted-foreground border-border",
+    icon: ShieldQuestion,
+    iconClass: "text-muted-foreground",
+    bgClass: "bg-muted",
+  },
 }
 
-function ChecklistRow({
+function ChecklistItem({
   item,
   onToggle,
 }: {
   item: SecurityItem
   onToggle: (id: string) => void
 }) {
-  const pConfig = priorityConfig(item.priority)
+  const config = priorityConfig[item.priority]
   return (
-    <div className="flex items-start gap-3 py-3">
+    <div className="flex items-start gap-3 py-3.5 first:pt-0 last:pb-0 border-b border-border last:border-0">
       <Checkbox
         id={item.id}
         checked={item.checked}
         onCheckedChange={() => onToggle(item.id)}
         className="mt-0.5"
       />
-      <div className="flex flex-col gap-1 flex-1 min-w-0">
-        <div className="flex items-center gap-2">
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
           <Label
             htmlFor={item.id}
-            className={`text-sm font-medium cursor-pointer ${
-              item.checked ? "text-muted-foreground line-through" : "text-foreground"
+            className={`text-[13px] font-medium cursor-pointer transition-colors ${
+              item.checked
+                ? "text-muted-foreground line-through"
+                : "text-foreground"
             }`}
           >
             {item.label}
           </Label>
-          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${pConfig.className}`}>
-            {pConfig.label}
+          <Badge
+            variant="outline"
+            className={`text-[9px] px-1.5 py-0 leading-relaxed ${config.badgeClass}`}
+          >
+            {config.label}
           </Badge>
         </div>
-        <span className="text-xs text-muted-foreground">{item.description}</span>
+        <p className="text-[12px] text-muted-foreground mt-0.5 leading-relaxed">
+          {item.description}
+        </p>
       </div>
+      {item.checked ? (
+        <CheckCircle2 className="size-4 text-success shrink-0 mt-0.5" />
+      ) : (
+        <Circle className="size-4 text-border shrink-0 mt-0.5" />
+      )}
     </div>
+  )
+}
+
+function StatCard({
+  label,
+  checked,
+  total,
+  icon: Icon,
+  iconClass,
+  bgClass,
+}: {
+  label: string
+  checked: number
+  total: number
+  icon: typeof ShieldAlert
+  iconClass: string
+  bgClass: string
+}) {
+  return (
+    <Card className="border-border shadow-[0_1px_3px_0_rgba(0,0,0,0.04)] py-0">
+      <CardContent className="p-4 flex items-center gap-3">
+        <div
+          className={`flex items-center justify-center size-9 rounded-lg ${bgClass}`}
+        >
+          <Icon className={`size-4 ${iconClass}`} />
+        </div>
+        <div className="flex flex-col">
+          <span className="text-[11px] text-muted-foreground font-medium">{label}</span>
+          <span className="text-base font-bold text-foreground tabular-nums">
+            {checked}
+            <span className="text-muted-foreground font-normal text-sm">/{total}</span>
+          </span>
+        </div>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -62,159 +136,170 @@ export function SecurityTab() {
 
   function handleToggle(id: string) {
     setItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, checked: !item.checked } : item))
+      prev.map((item) =>
+        item.id === id ? { ...item, checked: !item.checked } : item
+      )
     )
   }
 
-  const checkedCount = items.filter((i) => i.checked).length
-  const totalCount = items.length
-  const percentage = Math.round((checkedCount / totalCount) * 100)
+  const stats = useMemo(() => {
+    const checked = items.filter((i) => i.checked).length
+    const total = items.length
+    const pct = Math.round((checked / total) * 100)
 
-  const highPriority = items.filter((i) => i.priority === "alta")
-  const highChecked = highPriority.filter((i) => i.checked).length
-  const mediumPriority = items.filter((i) => i.priority === "media")
-  const mediumChecked = mediumPriority.filter((i) => i.checked).length
-  const lowPriority = items.filter((i) => i.priority === "baixa")
-  const lowChecked = lowPriority.filter((i) => i.checked).length
+    const critica = items.filter((i) => i.priority === "critica")
+    const importante = items.filter((i) => i.priority === "importante")
+    const recomendada = items.filter((i) => i.priority === "recomendada")
+
+    return {
+      checked,
+      total,
+      pct,
+      critica: { checked: critica.filter((i) => i.checked).length, total: critica.length, items: critica },
+      importante: { checked: importante.filter((i) => i.checked).length, total: importante.length, items: importante },
+      recomendada: { checked: recomendada.filter((i) => i.checked).length, total: recomendada.length, items: recomendada },
+    }
+  }, [items])
 
   return (
-    <div className="flex flex-col gap-6">
+    <section className="flex flex-col gap-6" aria-label="Checklist de Seguranca">
       <div>
-        <h2 className="text-lg font-semibold text-foreground">Seguranca</h2>
-        <p className="text-sm text-muted-foreground">
-          Checklist de setup e verificacao das plataformas
+        <h2 className="text-base font-semibold text-foreground">Seguranca</h2>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          Checklist de setup e verificacao das plataformas de anuncio
         </p>
       </div>
 
-      {/* Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-        <Card className="border-border/60 shadow-none py-4 gap-3 md:col-span-2">
-          <CardContent className="px-4 py-0 flex flex-col gap-3">
+      {/* Progress overview */}
+      <Card className="border-border shadow-[0_1px_3px_0_rgba(0,0,0,0.04)] py-0">
+        <CardContent className="p-5">
+          <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="size-4 text-primary" />
-                <span className="text-sm font-medium text-foreground">Progresso Geral</span>
+                <span className="text-sm font-semibold text-foreground">
+                  Progresso Geral
+                </span>
               </div>
-              <span className="text-sm font-semibold text-foreground">{percentage}%</span>
+              <span className="text-sm font-bold text-foreground tabular-nums">
+                {stats.pct}%
+              </span>
             </div>
-            <Progress value={percentage} className="h-2" />
-            <span className="text-xs text-muted-foreground">
-              {checkedCount} de {totalCount} itens verificados
-            </span>
-          </CardContent>
-        </Card>
+            <Progress value={stats.pct} className="h-2" />
+            <p className="text-[12px] text-muted-foreground">
+              {stats.checked} de {stats.total} itens verificados
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
-        <Card className="border-border/60 shadow-none py-4 gap-2">
-          <CardContent className="px-4 py-0 flex items-center gap-3">
-            <div className="flex items-center justify-center size-9 rounded-lg bg-destructive/10">
-              <AlertTriangle className="size-4 text-destructive" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Alta Prioridade</p>
-              <p className="text-lg font-semibold text-foreground">
-                {highChecked}/{highPriority.length}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/60 shadow-none py-4 gap-2">
-          <CardContent className="px-4 py-0 flex items-center gap-3">
-            <div className="flex items-center justify-center size-9 rounded-lg bg-warning/10">
-              <Info className="size-4 text-warning" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Media Prioridade</p>
-              <p className="text-lg font-semibold text-foreground">
-                {mediumChecked}/{mediumPriority.length}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Stat cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <StatCard
+          label="Critica"
+          checked={stats.critica.checked}
+          total={stats.critica.total}
+          icon={priorityConfig.critica.icon}
+          iconClass={priorityConfig.critica.iconClass}
+          bgClass={priorityConfig.critica.bgClass}
+        />
+        <StatCard
+          label="Importante"
+          checked={stats.importante.checked}
+          total={stats.importante.total}
+          icon={priorityConfig.importante.icon}
+          iconClass={priorityConfig.importante.iconClass}
+          bgClass={priorityConfig.importante.bgClass}
+        />
+        <StatCard
+          label="Recomendada"
+          checked={stats.recomendada.checked}
+          total={stats.recomendada.total}
+          icon={priorityConfig.recomendada.icon}
+          iconClass={priorityConfig.recomendada.iconClass}
+          bgClass={priorityConfig.recomendada.bgClass}
+        />
       </div>
 
-      {/* Checklist by priority */}
+      {/* Checklist cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="border-border/60 shadow-none">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center justify-center size-8 rounded-lg bg-destructive/10">
-                <AlertTriangle className="size-4 text-destructive" />
+        <Card className="border-border shadow-[0_1px_3px_0_rgba(0,0,0,0.04)]">
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2.5">
+              <div className={`flex items-center justify-center size-8 rounded-lg ${priorityConfig.critica.bgClass}`}>
+                <ShieldAlert className={`size-4 ${priorityConfig.critica.iconClass}`} />
               </div>
               <div>
-                <CardTitle className="text-sm">Alta Prioridade</CardTitle>
-                <CardDescription className="text-xs">
-                  Itens criticos para operacao
+                <CardTitle className="text-sm">Itens Criticos</CardTitle>
+                <CardDescription className="text-[11px]">
+                  Obrigatorios para operacao segura
                 </CardDescription>
               </div>
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="flex flex-col">
-              {highPriority.map((item, idx) => (
-                <div key={item.id}>
-                  <ChecklistRow item={item} onToggle={handleToggle} />
-                  {idx < highPriority.length - 1 && <Separator />}
-                </div>
-              ))}
-            </div>
+          <CardContent className="pt-2">
+            {stats.critica.items.map((item) => (
+              <ChecklistItem
+                key={item.id}
+                item={item}
+                onToggle={handleToggle}
+              />
+            ))}
           </CardContent>
         </Card>
 
         <div className="flex flex-col gap-6">
-          <Card className="border-border/60 shadow-none">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <div className="flex items-center justify-center size-8 rounded-lg bg-warning/10">
-                  <Info className="size-4 text-warning" />
+          <Card className="border-border shadow-[0_1px_3px_0_rgba(0,0,0,0.04)]">
+            <CardHeader className="pb-2">
+              <div className="flex items-center gap-2.5">
+                <div className={`flex items-center justify-center size-8 rounded-lg ${priorityConfig.importante.bgClass}`}>
+                  <ShieldCheck className={`size-4 ${priorityConfig.importante.iconClass}`} />
                 </div>
                 <div>
-                  <CardTitle className="text-sm">Media Prioridade</CardTitle>
-                  <CardDescription className="text-xs">
-                    Itens recomendados
+                  <CardTitle className="text-sm">Importantes</CardTitle>
+                  <CardDescription className="text-[11px]">
+                    Fortemente recomendados
                   </CardDescription>
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="flex flex-col">
-                {mediumPriority.map((item, idx) => (
-                  <div key={item.id}>
-                    <ChecklistRow item={item} onToggle={handleToggle} />
-                    {idx < mediumPriority.length - 1 && <Separator />}
-                  </div>
-                ))}
-              </div>
+            <CardContent className="pt-2">
+              {stats.importante.items.map((item) => (
+                <ChecklistItem
+                  key={item.id}
+                  item={item}
+                  onToggle={handleToggle}
+                />
+              ))}
             </CardContent>
           </Card>
 
-          <Card className="border-border/60 shadow-none">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <div className="flex items-center justify-center size-8 rounded-lg bg-muted">
-                  <Info className="size-4 text-muted-foreground" />
+          <Card className="border-border shadow-[0_1px_3px_0_rgba(0,0,0,0.04)]">
+            <CardHeader className="pb-2">
+              <div className="flex items-center gap-2.5">
+                <div className={`flex items-center justify-center size-8 rounded-lg ${priorityConfig.recomendada.bgClass}`}>
+                  <ShieldQuestion className={`size-4 ${priorityConfig.recomendada.iconClass}`} />
                 </div>
                 <div>
-                  <CardTitle className="text-sm">Baixa Prioridade</CardTitle>
-                  <CardDescription className="text-xs">
-                    Melhorias opcionais
+                  <CardTitle className="text-sm">Recomendadas</CardTitle>
+                  <CardDescription className="text-[11px]">
+                    Melhorias opcionais de setup
                   </CardDescription>
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="flex flex-col">
-                {lowPriority.map((item, idx) => (
-                  <div key={item.id}>
-                    <ChecklistRow item={item} onToggle={handleToggle} />
-                    {idx < lowPriority.length - 1 && <Separator />}
-                  </div>
-                ))}
-              </div>
+            <CardContent className="pt-2">
+              {stats.recomendada.items.map((item) => (
+                <ChecklistItem
+                  key={item.id}
+                  item={item}
+                  onToggle={handleToggle}
+                />
+              ))}
             </CardContent>
           </Card>
         </div>
       </div>
-    </div>
+    </section>
   )
 }
