@@ -22,17 +22,25 @@ jobs:
           username: ${{ secrets.HETZNER_USER }}
           key: ${{ secrets.HETZNER_SSH_KEY }}
           script: |
-            echo '=== PM2 show dashboard ==='
-            pm2 show dashboard
-            echo '=== PM2 logs dashboard (last 20) ==='
-            pm2 logs dashboard --lines 20 --nostream
-            echo '=== Files in deploy path ==='
-            ls -la ${{ secrets.DEPLOY_PATH }}/
-            echo '=== package.json name ==='
-            cat ${{ secrets.DEPLOY_PATH }}/package.json | head -5
-            echo '=== .next folder ==='
-            ls -la ${{ secrets.DEPLOY_PATH }}/.next/ 2>/dev/null || echo 'No .next folder'
-            echo '=== curl localhost:3000 title ==='
-            curl -s http://localhost:3000 | head -50
-            echo '=== Nginx config ==='
-            cat /etc/nginx/sites-enabled/* 2>/dev/null || cat /etc/nginx/conf.d/* 2>/dev/null || echo 'No nginx config found'
+            echo '=== nginx.conf main ===' 
+            cat /etc/nginx/nginx.conf
+            echo '=== ls sites-enabled ==='
+            ls -la /etc/nginx/sites-enabled/ 2>/dev/null || echo 'No sites-enabled'
+            echo '=== ls conf.d ==='
+            ls -la /etc/nginx/conf.d/ 2>/dev/null || echo 'No conf.d'
+            echo '=== ALL sites-enabled configs ==='
+            for f in /etc/nginx/sites-enabled/*; do echo "--- $f ---"; cat "$f"; done 2>/dev/null
+            echo '=== ALL conf.d configs ==='
+            for f in /etc/nginx/conf.d/*; do echo "--- $f ---"; cat "$f"; done 2>/dev/null
+            echo '=== nginx -T (full config dump) ==='
+            nginx -T 2>&1 | head -200
+            echo '=== PM2 status ==='
+            pm2 status
+            echo '=== curl localhost:3000 headers ==='
+            curl -sI http://localhost:3000
+            echo '=== curl marketing domain headers ==='
+            curl -skI https://marketing.atriaveiculos.com.br
+            echo '=== ls /var/www/ ==='
+            ls -la /var/www/ 2>/dev/null
+            echo '=== ls motor-bi ==='
+            ls -la /var/www/motor-bi/ 2>/dev/null || echo 'No motor-bi dir'
