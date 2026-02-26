@@ -22,55 +22,62 @@ jobs:
           username: ${{ secrets.HETZNER_USER }}
           key: ${{ secrets.HETZNER_SSH_KEY }}
           script: |
-            echo '=== Kill all nginx processes ==='
-            sudo killall -9 nginx 2>/dev/null || true
-            sleep 2
-            echo '=== Check ports 80 and 443 ==='
-            sudo ss -tlnp | grep -E ':80|:443' || echo 'Ports free'
+            echo '=== Whats on port 443? ==='
+            sudo ss -tlnp | grep ':443'
+            sudo lsof -i :443 2>/dev/null || echo 'lsof not found'
             
-            echo '=== Clean ALL nginx configs ==='
+            echo '=== Stop nginx service ==='
+            sudo systemctl stop nginx 2>/dev/null || true
+            sleep 1
+            
+            echo '=== Kill ANY process on port 80 and 443 ==='
+            sudo fuser -k 80/tcp 2>/dev/null || true
+            sudo fuser -k 443/tcp 2>/dev/null || true
+            sudo killall -9 nginx 2>/dev/null || true
+            sudo pkill -9 -f nginx 2>/dev/null || true
+            sleep 3
+            
+            echo '=== Verify ports free ==='
+            sudo ss -tlnp | grep -E ':80|:443' || echo 'ALL PORTS FREE'
+            
+            echo '=== Clean configs ==='
             sudo rm -f /etc/nginx/sites-enabled/*
             sudo rm -f /etc/nginx/conf.d/*.conf
             sudo rm -f /etc/nginx/sites-available/*
             
-            echo '=== Write proxy config ==='
+            echo '=== Write config ==='
             cat << 'NGINXEOF' | sudo tee /etc/nginx/sites-enabled/marketing
-            server {
-                listen 80;
-                server_name marketing.atriaveiculos.com.br;
-                return 301 https://$host$request_uri;
-            }
-            server {
-                listen 443 ssl;
-                server_name marketing.atriaveiculos.com.br;
-                ssl_certificate /etc/letsencrypt/live/marketing.atriaveiculos.com.br/fullchain.pem;
-                ssl_certificate_key /etc/letsencrypt/live/marketing.atriaveiculos.com.br/privkey.pem;
-                include /etc/letsencrypt/options-ssl-nginx.conf;
-                ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
-                location / {
-                    proxy_pass http://127.0.0.1:3000;
-                    proxy_http_version 1.1;
-                    proxy_set_header Upgrade $http_upgrade;
-                    proxy_set_header Connection 'upgrade';
-                    proxy_set_header Host $host;
-                    proxy_set_header X-Real-IP $remote_addr;
-                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                    proxy_set_header X-Forwarded-Proto $scheme;
-                    proxy_cache_bypass $http_upgrade;
-                }
-            }
-            NGINXEOF
+server {
+    listen 80;
+    server_name marketing.atriaveiculos.com.br;
+    return 301 https://$host$request_uri;
+}
+server {
+    listen 443 ssl;
+    server_name marketing.atriaveiculos.com.br;
+    ssl_certificate /etc/letsencrypt/live/marketing.atriaveiculos.com.br/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/marketing.atriaveiculos.com.br/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+NGINXEOF
             
-            echo '=== Test config ==='
             sudo nginx -t 2>&1
-            
-            echo '=== Start nginx ==='
             sudo systemctl start nginx
+            sleep 2
             sudo systemctl status nginx --no-pager
             
-            echo '=== Verify curl domain ==='
-            sleep 2
-            curl -skI https://marketing.atriaveiculos.com.br | head -10
-            curl -sk https://marketing.atriaveiculos.com.br | head -20
-            
+            echo '=== Test ==='
+            curl -skI https://marketing.atriaveiculos.com.br | head -5
             echo 'DONE'
