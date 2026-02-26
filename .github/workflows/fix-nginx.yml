@@ -22,12 +22,9 @@ jobs:
           username: ${{ secrets.HETZNER_USER }}
           key: ${{ secrets.HETZNER_SSH_KEY }}
           script: |
-            echo '=== Stop nginx and free ports ==='
+            echo '=== Stop nginx ==='
             sudo systemctl stop nginx 2>&1 || true
-            sudo killall nginx 2>&1 || true
-            sudo fuser -k 80/tcp 2>&1 || true
-            sudo fuser -k 443/tcp 2>&1 || true
-            sleep 2
+            sleep 1
 
             echo '=== Clean configs ==='
             sudo rm -f /etc/nginx/sites-enabled/*
@@ -37,12 +34,12 @@ jobs:
             echo '=== Write proxy config ==='
             sudo tee /etc/nginx/sites-enabled/marketing > /dev/null << 'NGINXEOF'
             server {
-                listen 80;
+                listen 89.167.86.55:80;
                 server_name marketing.atriaveiculos.com.br;
                 return 301 https://$host$request_uri;
             }
             server {
-                listen 443 ssl;
+                listen 89.167.86.55:443 ssl;
                 server_name marketing.atriaveiculos.com.br;
                 ssl_certificate /etc/letsencrypt/live/marketing.atriaveiculos.com.br/fullchain.pem;
                 ssl_certificate_key /etc/letsencrypt/live/marketing.atriaveiculos.com.br/privkey.pem;
