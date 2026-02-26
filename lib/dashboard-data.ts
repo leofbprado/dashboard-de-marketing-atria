@@ -1,13 +1,24 @@
 // ─── Types ───────────────────────────────────────────────
 
+export interface PipelineStep {
+  role: string
+  title: string
+  done: boolean
+  details: string[]
+}
+
 export interface Campaign {
   id: string
   title: string
-  platform: "meta" | "google"
+  theme: string
+  platform: "meta" | "google" | "meta+google"
   budget: string
   status: string
   dueDate: string
+  week: string
   priority: "alta" | "media" | "baixa"
+  tags: string[]
+  pipeline: PipelineStep[]
 }
 
 export interface KpiCard {
@@ -50,43 +61,383 @@ export interface SecurityItem {
 
 export const kanbanPhases = [
   { id: "briefing", label: "Briefing", count: 0 },
-  { id: "criacao", label: "Criacao", count: 0 },
-  { id: "revisao", label: "Revisao", count: 0 },
-  { id: "aprovacao", label: "Aprovacao", count: 0 },
+  { id: "criativo", label: "Criativo", count: 0 },
+  { id: "producao", label: "Producao", count: 0 },
   { id: "publicacao", label: "Publicacao", count: 0 },
-  { id: "monitoramento", label: "Monitoramento", count: 0 },
+  { id: "monitor48h", label: "Monitor 48h", count: 0 },
+  { id: "decisao", label: "Decisao", count: 0 },
   { id: "concluido", label: "Concluido", count: 0 },
 ] as const
 
 export type KanbanPhaseId = (typeof kanbanPhases)[number]["id"]
 
+// ─── Move-to options (used in campaign detail modal) ─────
+export const moveToOptions: { id: KanbanPhaseId; label: string; color: string }[] = [
+  { id: "briefing", label: "Briefing", color: "#868e96" },
+  { id: "criativo", label: "Criativo", color: "#4c6ef5" },
+  { id: "producao", label: "Producao", color: "#7950f2" },
+  { id: "publicacao", label: "Publicacao", color: "#1098ad" },
+  { id: "monitor48h", label: "Monitor 48h", color: "#f76707" },
+  { id: "decisao", label: "Decisao", color: "#fab005" },
+  { id: "concluido", label: "Concluido", color: "#12b886" },
+]
+
+// ─── Pipeline role icons/emojis are handled in the component
+
 // ─── Kanban Demo Data ────────────────────────────────────
 
 export const initialCampaigns: Record<KanbanPhaseId, Campaign[]> = {
   briefing: [
-    { id: "c1", title: "Lancamento SUV 2026", platform: "meta", budget: "R$ 15.000", status: "Nova", dueDate: "10/03", priority: "alta" },
-    { id: "c2", title: "Promocao Seminovos", platform: "google", budget: "R$ 8.500", status: "Nova", dueDate: "12/03", priority: "media" },
+    {
+      id: "c1",
+      title: "Seguranca — Medo de golpe",
+      theme: "Seguranca",
+      platform: "meta+google",
+      budget: "R$ 25/dia",
+      status: "PAUSED",
+      dueDate: "2026-02-25",
+      week: "SEM 13",
+      priority: "alta",
+      tags: ["Seguranca"],
+      pipeline: [
+        {
+          role: "Estrategista",
+          title: "Estrategista",
+          done: true,
+          details: [
+            "Dor: Seguranca | Meta+Google | R$25/dia",
+            "Publico: donos veiculos 2018+, interesse em FIPE/Kavak/iCarros",
+            "Hipotese: medo de golpe Pix e a dor mais urgente pos-carnaval",
+          ],
+        },
+        {
+          role: "Roteirista",
+          title: "Roteirista",
+          done: true,
+          details: [
+            "VIDEO PROMPT: Cinematic close-up of hands exchanging car keys, warm showroom lighting, transition to concerned face looking at phone with 'PIX RECEBIDO' notification fading to red warning...",
+            "VOICE SCRIPT (14s): 'Vender seu carro por conta propria? Pix falso, cheque devolvido, comprador sumiu. Na Atria, voce entrega o carro e recebe com seguranca. Chame no WhatsApp.'",
+            "GOOGLE: 15 headlines + 4 descriptions criados",
+          ],
+        },
+        {
+          role: "Produtor",
+          title: "Produtor",
+          done: true,
+          details: [
+            "ATRIA_consignacao_seguranca_2026-02-25_v1.mp4",
+            "Duracao: 28s | 1080p 9:16 | H.264",
+            "Voz: ElevenLabs masculina, tom grave confiavel",
+            "Captions: 4 cenas com texto overlay",
+          ],
+        },
+        {
+          role: "Publicador",
+          title: "Publicador",
+          done: false,
+          details: [
+            "Aguardando aprovacao do criativo pelo Leo",
+            "Meta: Leo publica manualmente",
+            "Google: pronto para criar PAUSED apos aprovacao",
+          ],
+        },
+        {
+          role: "Analista",
+          title: "Analista",
+          done: false,
+          details: ["Aguardando publicacao para iniciar monitoramento"],
+        },
+      ],
+    },
+    {
+      id: "c2",
+      title: "Promocao Seminovos",
+      theme: "Vendas",
+      platform: "google",
+      budget: "R$ 50/dia",
+      status: "Ativa",
+      dueDate: "2026-03-12",
+      week: "SEM 14",
+      priority: "media",
+      tags: ["Vendas"],
+      pipeline: [
+        {
+          role: "Estrategista",
+          title: "Estrategista",
+          done: true,
+          details: [
+            "Dor: Estoque parado de seminovos",
+            "Publico: compradores 25-45 anos, renda B/C",
+            "Hipotese: preco agressivo + financiamento facil converte",
+          ],
+        },
+        {
+          role: "Roteirista",
+          title: "Roteirista",
+          done: false,
+          details: ["Aguardando briefing aprovado"],
+        },
+        { role: "Produtor", title: "Produtor", done: false, details: [] },
+        { role: "Publicador", title: "Publicador", done: false, details: [] },
+        { role: "Analista", title: "Analista", done: false, details: [] },
+      ],
+    },
   ],
-  criacao: [
-    { id: "c3", title: "Feirao de Marco", platform: "meta", budget: "R$ 22.000", status: "Em andamento", dueDate: "08/03", priority: "alta" },
-    { id: "c4", title: "Test Drive Eletricos", platform: "google", budget: "R$ 12.000", status: "Em andamento", dueDate: "15/03", priority: "media" },
+  criativo: [
+    {
+      id: "c3",
+      title: "Feirao de Marco",
+      theme: "Vendas",
+      platform: "meta",
+      budget: "R$ 120/dia",
+      status: "Em andamento",
+      dueDate: "2026-03-08",
+      week: "SEM 14",
+      priority: "alta",
+      tags: ["Vendas", "Feirao"],
+      pipeline: [
+        {
+          role: "Estrategista",
+          title: "Estrategista",
+          done: true,
+          details: [
+            "Dor: Estoque alto pos-virada do ano",
+            "Publico: compradores primeiro carro e troca",
+            "Hipotese: urgencia de prazo limitado funciona",
+          ],
+        },
+        {
+          role: "Roteirista",
+          title: "Roteirista",
+          done: true,
+          details: [
+            "3 variacoes de copy criadas",
+            "Foco em urgencia e condicoes exclusivas",
+          ],
+        },
+        {
+          role: "Produtor",
+          title: "Produtor",
+          done: false,
+          details: ["Em producao: 2 videos + 4 estaticos"],
+        },
+        { role: "Publicador", title: "Publicador", done: false, details: [] },
+        { role: "Analista", title: "Analista", done: false, details: [] },
+      ],
+    },
+    {
+      id: "c4",
+      title: "Test Drive Eletricos",
+      theme: "Institucional",
+      platform: "google",
+      budget: "R$ 80/dia",
+      status: "Em andamento",
+      dueDate: "2026-03-15",
+      week: "SEM 15",
+      priority: "media",
+      tags: ["Eletricos", "Test Drive"],
+      pipeline: [
+        {
+          role: "Estrategista",
+          title: "Estrategista",
+          done: true,
+          details: [
+            "Dor: Desconhecimento sobre EVs",
+            "Publico: early adopters, renda A/B",
+          ],
+        },
+        {
+          role: "Roteirista",
+          title: "Roteirista",
+          done: false,
+          details: ["Pesquisando referencias de campanhas EV"],
+        },
+        { role: "Produtor", title: "Produtor", done: false, details: [] },
+        { role: "Publicador", title: "Publicador", done: false, details: [] },
+        { role: "Analista", title: "Analista", done: false, details: [] },
+      ],
+    },
   ],
-  revisao: [
-    { id: "c5", title: "Black Week Pecas", platform: "meta", budget: "R$ 5.000", status: "Pendente", dueDate: "07/03", priority: "baixa" },
-  ],
-  aprovacao: [
-    { id: "c6", title: "Consorcio Especial", platform: "google", budget: "R$ 18.000", status: "Aguardando", dueDate: "09/03", priority: "alta" },
-    { id: "c7", title: "Revisao Programada", platform: "meta", budget: "R$ 6.500", status: "Aguardando", dueDate: "11/03", priority: "baixa" },
+  producao: [
+    {
+      id: "c5",
+      title: "Black Week Pecas",
+      theme: "Pos-venda",
+      platform: "meta",
+      budget: "R$ 30/dia",
+      status: "Pendente",
+      dueDate: "2026-03-07",
+      week: "SEM 13",
+      priority: "baixa",
+      tags: ["Pecas", "Pos-venda"],
+      pipeline: [
+        { role: "Estrategista", title: "Estrategista", done: true, details: ["Briefing aprovado"] },
+        { role: "Roteirista", title: "Roteirista", done: true, details: ["Scripts finalizados"] },
+        { role: "Produtor", title: "Produtor", done: false, details: ["Gerando criativos no Canva"] },
+        { role: "Publicador", title: "Publicador", done: false, details: [] },
+        { role: "Analista", title: "Analista", done: false, details: [] },
+      ],
+    },
   ],
   publicacao: [
-    { id: "c8", title: "Campanha Institucional", platform: "meta", budget: "R$ 30.000", status: "Agendada", dueDate: "06/03", priority: "alta" },
+    {
+      id: "c8",
+      title: "Campanha Institucional",
+      theme: "Institucional",
+      platform: "meta",
+      budget: "R$ 200/dia",
+      status: "Agendada",
+      dueDate: "2026-03-06",
+      week: "SEM 13",
+      priority: "alta",
+      tags: ["Institucional", "Brand"],
+      pipeline: [
+        { role: "Estrategista", title: "Estrategista", done: true, details: ["Briefing pronto"] },
+        { role: "Roteirista", title: "Roteirista", done: true, details: ["Copy aprovada"] },
+        { role: "Produtor", title: "Produtor", done: true, details: ["4 pecas finalizadas"] },
+        {
+          role: "Publicador",
+          title: "Publicador",
+          done: false,
+          details: ["Agendando para 06/03 as 10h", "Todas as pecas revisadas e prontas"],
+        },
+        { role: "Analista", title: "Analista", done: false, details: [] },
+      ],
+    },
   ],
-  monitoramento: [
-    { id: "c9", title: "Leads Financiamento", platform: "google", budget: "R$ 20.000", status: "Ativa", dueDate: "28/02", priority: "alta" },
-    { id: "c10", title: "Remarketing Visitantes", platform: "meta", budget: "R$ 10.000", status: "Ativa", dueDate: "01/03", priority: "media" },
+  monitor48h: [
+    {
+      id: "c9",
+      title: "Leads Financiamento",
+      theme: "Financiamento",
+      platform: "google",
+      budget: "R$ 150/dia",
+      status: "Ativa",
+      dueDate: "2026-02-28",
+      week: "SEM 12",
+      priority: "alta",
+      tags: ["Financiamento", "Leads"],
+      pipeline: [
+        { role: "Estrategista", title: "Estrategista", done: true, details: ["Estrategia aprovada"] },
+        { role: "Roteirista", title: "Roteirista", done: true, details: ["Headlines e descriptions prontos"] },
+        { role: "Produtor", title: "Produtor", done: true, details: ["Criativos entregues"] },
+        { role: "Publicador", title: "Publicador", done: true, details: ["Publicado em 25/02"] },
+        {
+          role: "Analista",
+          title: "Analista",
+          done: false,
+          details: [
+            "Monitorando primeiras 48h",
+            "CTR: 3.2% (acima da meta)",
+            "CPL: R$ 45 (dentro do limite)",
+          ],
+        },
+      ],
+    },
+    {
+      id: "c10",
+      title: "Remarketing Visitantes",
+      theme: "Remarketing",
+      platform: "meta",
+      budget: "R$ 60/dia",
+      status: "Ativa",
+      dueDate: "2026-03-01",
+      week: "SEM 12",
+      priority: "media",
+      tags: ["Remarketing"],
+      pipeline: [
+        { role: "Estrategista", title: "Estrategista", done: true, details: ["Publico de remarketing definido"] },
+        { role: "Roteirista", title: "Roteirista", done: true, details: ["Copy de retargeting pronta"] },
+        { role: "Produtor", title: "Produtor", done: true, details: ["Criativos dinamicos configurados"] },
+        { role: "Publicador", title: "Publicador", done: true, details: ["Publicado em 26/02"] },
+        {
+          role: "Analista",
+          title: "Analista",
+          done: false,
+          details: ["CTR: 1.8%", "Frequencia: 2.3x"],
+        },
+      ],
+    },
+  ],
+  decisao: [
+    {
+      id: "c6",
+      title: "Consorcio Especial",
+      theme: "Financeiro",
+      platform: "google",
+      budget: "R$ 100/dia",
+      status: "Em analise",
+      dueDate: "2026-03-09",
+      week: "SEM 14",
+      priority: "alta",
+      tags: ["Consorcio", "Financeiro"],
+      pipeline: [
+        { role: "Estrategista", title: "Estrategista", done: true, details: ["Estrategia definida"] },
+        { role: "Roteirista", title: "Roteirista", done: true, details: ["Scripts aprovados"] },
+        { role: "Produtor", title: "Produtor", done: true, details: ["Materiais produzidos"] },
+        { role: "Publicador", title: "Publicador", done: true, details: ["Publicado em 02/03"] },
+        {
+          role: "Analista",
+          title: "Analista",
+          done: true,
+          details: [
+            "ROAS: 3.8x (abaixo da meta de 4x)",
+            "CPL: R$ 92 (acima do limite R$85)",
+            "Recomendacao: ajustar publico e reduzir CPC",
+          ],
+        },
+      ],
+    },
+    {
+      id: "c7",
+      title: "Revisao Programada",
+      theme: "Pos-venda",
+      platform: "meta",
+      budget: "R$ 40/dia",
+      status: "Em analise",
+      dueDate: "2026-03-11",
+      week: "SEM 14",
+      priority: "baixa",
+      tags: ["Pos-venda", "Servicos"],
+      pipeline: [
+        { role: "Estrategista", title: "Estrategista", done: true, details: ["Ok"] },
+        { role: "Roteirista", title: "Roteirista", done: true, details: ["Ok"] },
+        { role: "Produtor", title: "Produtor", done: true, details: ["Ok"] },
+        { role: "Publicador", title: "Publicador", done: true, details: ["Publicado"] },
+        {
+          role: "Analista",
+          title: "Analista",
+          done: true,
+          details: ["ROAS: 5.2x", "Recomendacao: escalar verba"],
+        },
+      ],
+    },
   ],
   concluido: [
-    { id: "c11", title: "Natal 2025", platform: "meta", budget: "R$ 25.000", status: "Finalizada", dueDate: "25/12", priority: "media" },
+    {
+      id: "c11",
+      title: "Natal 2025",
+      theme: "Sazonal",
+      platform: "meta+google",
+      budget: "R$ 250/dia",
+      status: "Finalizada",
+      dueDate: "2025-12-25",
+      week: "SEM 52",
+      priority: "media",
+      tags: ["Sazonal", "Natal"],
+      pipeline: [
+        { role: "Estrategista", title: "Estrategista", done: true, details: ["Concluido"] },
+        { role: "Roteirista", title: "Roteirista", done: true, details: ["Concluido"] },
+        { role: "Produtor", title: "Produtor", done: true, details: ["Concluido"] },
+        { role: "Publicador", title: "Publicador", done: true, details: ["Concluido"] },
+        {
+          role: "Analista",
+          title: "Analista",
+          done: true,
+          details: ["ROAS final: 6.1x", "147 leads gerados", "Campanha encerrada com sucesso"],
+        },
+      ],
+    },
   ],
 }
 
