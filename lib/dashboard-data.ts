@@ -1,24 +1,16 @@
 // ─── Types ───────────────────────────────────────────────
-
-export interface PipelineStep {
-  role: string
-  title: string
-  done: boolean
-  details: string[]
-}
-
 export interface Campaign {
   id: string
   title: string
-  theme: string
   platform: "meta" | "google" | "meta+google"
   budget: string
-  status: string
-  dueDate: string
-  week: string
-  priority: "alta" | "media" | "baixa"
-  tags: string[]
-  pipeline: PipelineStep[]
+  status: "ACTIVE" | "PAUSED"
+  week: string // SEM XX
+  theme: string
+  hook: string
+  pillar: string // Segurança, Tempo, Preço etc
+  progress: { current: number; total: number } // 3/5
+  metrics?: { impressions: string; cpl: string } // quando publicado
 }
 
 export interface KpiCard {
@@ -27,7 +19,6 @@ export interface KpiCard {
   change: number
   trend: "up" | "down" | "neutral"
   platform: "meta" | "google"
-  description: string
 }
 
 export interface SettingToggle {
@@ -35,7 +26,6 @@ export interface SettingToggle {
   label: string
   description: string
   enabled: boolean
-  category: "automacao" | "notificacao" | "otimizacao"
 }
 
 export interface OperationalLimit {
@@ -43,9 +33,7 @@ export interface OperationalLimit {
   label: string
   value: number
   unit: string
-  min: number
   max: number
-  step: number
 }
 
 export interface SecurityItem {
@@ -53,448 +41,275 @@ export interface SecurityItem {
   label: string
   description: string
   checked: boolean
-  priority: "critica" | "importante" | "recomendada"
-  category: "tracking" | "acesso" | "configuracao"
+  priority: "alta" | "media" | "baixa"
+  category: "hetzner" | "meta-ads" | "google-ads" | "lp-openclaw"
 }
 
-// ─── Kanban Phases ───────────────────────────────────────
+// parâmetros específicos de configuração do motor de consignaçãp
+export interface MotorConfig {
+  ALLOW_AUTO_CREATE: boolean
+  ALLOW_AUTO_ACTIVATE: boolean
+  ALLOW_BUDGET_INCREASE: boolean
+  MAX_DAILY_BUDGET: number
+  MAX_CAMPAIGNS_WEEK_META: number
+  MAX_CAMPAIGNS_WEEK_GOOGLE: number
+  COOLDOWN_HOURS: number
+  MAX_TOTAL_DAILY_SPEND: number
+  DUPLICATION_ALLOWED: boolean
+  EDIT_EXISTING_ALLOWED: boolean
+  QUARANTINE_ACTIVE: boolean
+  QUARANTINE_WEEKS_LEFT: number
+  KILL_SWITCH_ACTIVE: boolean
+}
 
+export const initialMotorConfig: MotorConfig = {
+  ALLOW_AUTO_CREATE: true,
+  ALLOW_AUTO_ACTIVATE: true,
+  ALLOW_BUDGET_INCREASE: false,
+  MAX_DAILY_BUDGET: 30,
+  MAX_CAMPAIGNS_WEEK_META: 1,
+  MAX_CAMPAIGNS_WEEK_GOOGLE: 1,
+  COOLDOWN_HOURS: 72,
+  MAX_TOTAL_DAILY_SPEND: 100,
+  DUPLICATION_ALLOWED: false,
+  EDIT_EXISTING_ALLOWED: false,
+  QUARANTINE_ACTIVE: true,
+  QUARANTINE_WEEKS_LEFT: 3,
+  KILL_SWITCH_ACTIVE: false,
+}
+
+export interface SecurityEvent {
+  id: string
+  timestamp: string
+  type: "configchange" | "killswitch" | "budgetover" | "multicreate" | "authfail" | "metawriteattempt" | "freqhigh" | "campaignpaused"
+  severity: "info" | "warning" | "critical"
+  detail: string
+  action: string
+}
+
+export const initialSecurityEvents: SecurityEvent[] = [
+  {
+    id: "evt-1",
+    timestamp: "2026-01-15T08:30:00Z",
+    type: "configchange",
+    severity: "info",
+    detail: "Orçamento diário ajustado para R$30",
+    action: "notificar equipe",
+  },
+  {
+    id: "evt-2",
+    timestamp: "2026-01-20T14:12:00Z",
+    type: "budgetover",
+    severity: "warning",
+    detail: "Gasto diário ultrapassou o limite definido",
+    action: "pausar campanhas",
+  },
+  {
+    id: "evt-3",
+    timestamp: "2026-02-01T09:00:00Z",
+    type: "authfail",
+    severity: "critical",
+    detail: "Falha de autenticação na API do Meta",
+    action: "verificar credenciais",
+  },
+  {
+    id: "evt-4",
+    timestamp: "2026-02-10T16:45:00Z",
+    type: "multicreate",
+    severity: "warning",
+    detail: "Tentativa de criar mais campanhas do que o permitido",
+    action: "bloquear requisição",
+  },
+  {
+    id: "evt-5",
+    timestamp: "2026-02-20T11:20:00Z",
+    type: "killswitch",
+    severity: "critical",
+    detail: "Kill switch ativado manualmente",
+    action: "analisar motivos e reiniciar motor",
+  },
+]
+
+// ─── Kanban Phases ───────────────────────────────────────
+// nome da coluna mudou de "producao" para "aprovacao"; gate de aprovação do Leo antes de publicar
 export const kanbanPhases = [
-  { id: "briefing", label: "Briefing", count: 0 },
-  { id: "criativo", label: "Criativo", count: 0 },
-  { id: "producao", label: "Producao", count: 0 },
-  { id: "publicacao", label: "Publicacao", count: 0 },
-  { id: "monitor48h", label: "Monitor 48h", count: 0 },
-  { id: "decisao", label: "Decisao", count: 0 },
-  { id: "concluido", label: "Concluido", count: 0 },
+  { id: "briefing", label: "Briefing", responsible: "Estrategista", color: "bg-muted-foreground/20" },
+  { id: "criativo", label: "Criativo", responsible: "Roteirista+Produtor", color: "bg-info/20" },
+  { id: "aprovacao", label: "Aprovacao", responsible: "Leo", color: "bg-warning/20" },
+  { id: "publicado", label: "Publicado", responsible: "Robozinho", color: "bg-chart-4/20" },
+  { id: "monitor", label: "Monitor 48h", responsible: "Analista", color: "bg-success/20" },
 ] as const
 
 export type KanbanPhaseId = (typeof kanbanPhases)[number]["id"]
 
-// ─── Move-to options (used in campaign detail modal) ─────
-export const moveToOptions: { id: KanbanPhaseId; label: string; color: string }[] = [
-  { id: "briefing", label: "Briefing", color: "#868e96" },
-  { id: "criativo", label: "Criativo", color: "#4c6ef5" },
-  { id: "producao", label: "Producao", color: "#7950f2" },
-  { id: "publicacao", label: "Publicacao", color: "#1098ad" },
-  { id: "monitor48h", label: "Monitor 48h", color: "#f76707" },
-  { id: "decisao", label: "Decisao", color: "#fab005" },
-  { id: "concluido", label: "Concluido", color: "#12b886" },
-]
-
-// ─── Pipeline role icons/emojis are handled in the component
-
 // ─── Kanban Demo Data ────────────────────────────────────
-
+// todas as campanhas agora são de consignação e usam apenas as três dores principais
 export const initialCampaigns: Record<KanbanPhaseId, Campaign[]> = {
   briefing: [
     {
-      id: "c1",
-      title: "Seguranca — Medo de golpe",
-      theme: "Seguranca",
-      platform: "meta+google",
-      budget: "R$ 25/dia",
+      id: "1",
+      title: "Consignação - Segurança: Evite golpes",
+      platform: "meta",
+      budget: "R$ 30",
       status: "PAUSED",
-      dueDate: "2026-02-25",
-      week: "SEM 13",
-      priority: "alta",
-      tags: ["Seguranca"],
-      pipeline: [
-        {
-          role: "Estrategista",
-          title: "Estrategista",
-          done: true,
-          details: [
-            "Dor: Seguranca | Meta+Google | R$25/dia",
-            "Publico: donos veiculos 2018+, interesse em FIPE/Kavak/iCarros",
-            "Hipotese: medo de golpe Pix e a dor mais urgente pos-carnaval",
-          ],
-        },
-        {
-          role: "Roteirista",
-          title: "Roteirista",
-          done: true,
-          details: [
-            "VIDEO PROMPT: Cinematic close-up of hands exchanging car keys, warm showroom lighting, transition to concerned face looking at phone with 'PIX RECEBIDO' notification fading to red warning...",
-            "VOICE SCRIPT (14s): 'Vender seu carro por conta propria? Pix falso, cheque devolvido, comprador sumiu. Na Atria, voce entrega o carro e recebe com seguranca. Chame no WhatsApp.'",
-            "GOOGLE: 15 headlines + 4 descriptions criados",
-          ],
-        },
-        {
-          role: "Produtor",
-          title: "Produtor",
-          done: true,
-          details: [
-            "ATRIA_consignacao_seguranca_2026-02-25_v1.mp4",
-            "Duracao: 28s | 1080p 9:16 | H.264",
-            "Voz: ElevenLabs masculina, tom grave confiavel",
-            "Captions: 4 cenas com texto overlay",
-          ],
-        },
-        {
-          role: "Publicador",
-          title: "Publicador",
-          done: false,
-          details: [
-            "Aguardando aprovacao do criativo pelo Leo",
-            "Meta: Leo publica manualmente",
-            "Google: pronto para criar PAUSED apos aprovacao",
-          ],
-        },
-        {
-          role: "Analista",
-          title: "Analista",
-          done: false,
-          details: ["Aguardando publicacao para iniciar monitoramento"],
-        },
-      ],
-    },
-    {
-      id: "c2",
-      title: "Promocao Seminovos",
-      theme: "Vendas",
-      platform: "google",
-      budget: "R$ 50/dia",
-      status: "Ativa",
-      dueDate: "2026-03-12",
-      week: "SEM 14",
-      priority: "media",
-      tags: ["Vendas"],
-      pipeline: [
-        {
-          role: "Estrategista",
-          title: "Estrategista",
-          done: true,
-          details: [
-            "Dor: Estoque parado de seminovos",
-            "Publico: compradores 25-45 anos, renda B/C",
-            "Hipotese: preco agressivo + financiamento facil converte",
-          ],
-        },
-        {
-          role: "Roteirista",
-          title: "Roteirista",
-          done: false,
-          details: ["Aguardando briefing aprovado"],
-        },
-        { role: "Produtor", title: "Produtor", done: false, details: [] },
-        { role: "Publicador", title: "Publicador", done: false, details: [] },
-        { role: "Analista", title: "Analista", done: false, details: [] },
-      ],
+      week: "SEM 12",
+      theme: "Segurança",
+      hook: "Evite golpes Pix/cheque",
+      pillar: "Segurança",
+      progress: { current: 0, total: 5 },
     },
   ],
   criativo: [
     {
-      id: "c3",
-      title: "Feirao de Marco",
-      theme: "Vendas",
-      platform: "meta",
-      budget: "R$ 120/dia",
-      status: "Em andamento",
-      dueDate: "2026-03-08",
-      week: "SEM 14",
-      priority: "alta",
-      tags: ["Vendas", "Feirao"],
-      pipeline: [
-        {
-          role: "Estrategista",
-          title: "Estrategista",
-          done: true,
-          details: [
-            "Dor: Estoque alto pos-virada do ano",
-            "Publico: compradores primeiro carro e troca",
-            "Hipotese: urgencia de prazo limitado funciona",
-          ],
-        },
-        {
-          role: "Roteirista",
-          title: "Roteirista",
-          done: true,
-          details: [
-            "3 variacoes de copy criadas",
-            "Foco em urgencia e condicoes exclusivas",
-          ],
-        },
-        {
-          role: "Produtor",
-          title: "Produtor",
-          done: false,
-          details: ["Em producao: 2 videos + 4 estaticos"],
-        },
-        { role: "Publicador", title: "Publicador", done: false, details: [] },
-        { role: "Analista", title: "Analista", done: false, details: [] },
-      ],
-    },
-    {
-      id: "c4",
-      title: "Test Drive Eletricos",
-      theme: "Institucional",
+      id: "2",
+      title: "Consignação - Tempo: Venda sem estresse",
       platform: "google",
-      budget: "R$ 80/dia",
-      status: "Em andamento",
-      dueDate: "2026-03-15",
-      week: "SEM 15",
-      priority: "media",
-      tags: ["Eletricos", "Test Drive"],
-      pipeline: [
-        {
-          role: "Estrategista",
-          title: "Estrategista",
-          done: true,
-          details: [
-            "Dor: Desconhecimento sobre EVs",
-            "Publico: early adopters, renda A/B",
-          ],
-        },
-        {
-          role: "Roteirista",
-          title: "Roteirista",
-          done: false,
-          details: ["Pesquisando referencias de campanhas EV"],
-        },
-        { role: "Produtor", title: "Produtor", done: false, details: [] },
-        { role: "Publicador", title: "Publicador", done: false, details: [] },
-        { role: "Analista", title: "Analista", done: false, details: [] },
-      ],
-    },
-  ],
-  producao: [
-    {
-      id: "c5",
-      title: "Black Week Pecas",
-      theme: "Pos-venda",
-      platform: "meta",
-      budget: "R$ 30/dia",
-      status: "Pendente",
-      dueDate: "2026-03-07",
-      week: "SEM 13",
-      priority: "baixa",
-      tags: ["Pecas", "Pos-venda"],
-      pipeline: [
-        { role: "Estrategista", title: "Estrategista", done: true, details: ["Briefing aprovado"] },
-        { role: "Roteirista", title: "Roteirista", done: true, details: ["Scripts finalizados"] },
-        { role: "Produtor", title: "Produtor", done: false, details: ["Gerando criativos no Canva"] },
-        { role: "Publicador", title: "Publicador", done: false, details: [] },
-        { role: "Analista", title: "Analista", done: false, details: [] },
-      ],
-    },
-  ],
-  publicacao: [
-    {
-      id: "c8",
-      title: "Campanha Institucional",
-      theme: "Institucional",
-      platform: "meta",
-      budget: "R$ 200/dia",
-      status: "Agendada",
-      dueDate: "2026-03-06",
-      week: "SEM 13",
-      priority: "alta",
-      tags: ["Institucional", "Brand"],
-      pipeline: [
-        { role: "Estrategista", title: "Estrategista", done: true, details: ["Briefing pronto"] },
-        { role: "Roteirista", title: "Roteirista", done: true, details: ["Copy aprovada"] },
-        { role: "Produtor", title: "Produtor", done: true, details: ["4 pecas finalizadas"] },
-        {
-          role: "Publicador",
-          title: "Publicador",
-          done: false,
-          details: ["Agendando para 06/03 as 10h", "Todas as pecas revisadas e prontas"],
-        },
-        { role: "Analista", title: "Analista", done: false, details: [] },
-      ],
-    },
-  ],
-  monitor48h: [
-    {
-      id: "c9",
-      title: "Leads Financiamento",
-      theme: "Financiamento",
-      platform: "google",
-      budget: "R$ 150/dia",
-      status: "Ativa",
-      dueDate: "2026-02-28",
+      budget: "R$ 30",
+      status: "ACTIVE",
       week: "SEM 12",
-      priority: "alta",
-      tags: ["Financiamento", "Leads"],
-      pipeline: [
-        { role: "Estrategista", title: "Estrategista", done: true, details: ["Estrategia aprovada"] },
-        { role: "Roteirista", title: "Roteirista", done: true, details: ["Headlines e descriptions prontos"] },
-        { role: "Produtor", title: "Produtor", done: true, details: ["Criativos entregues"] },
-        { role: "Publicador", title: "Publicador", done: true, details: ["Publicado em 25/02"] },
-        {
-          role: "Analista",
-          title: "Analista",
-          done: false,
-          details: [
-            "Monitorando primeiras 48h",
-            "CTR: 3.2% (acima da meta)",
-            "CPL: R$ 45 (dentro do limite)",
-          ],
-        },
-      ],
-    },
-    {
-      id: "c10",
-      title: "Remarketing Visitantes",
-      theme: "Remarketing",
-      platform: "meta",
-      budget: "R$ 60/dia",
-      status: "Ativa",
-      dueDate: "2026-03-01",
-      week: "SEM 12",
-      priority: "media",
-      tags: ["Remarketing"],
-      pipeline: [
-        { role: "Estrategista", title: "Estrategista", done: true, details: ["Publico de remarketing definido"] },
-        { role: "Roteirista", title: "Roteirista", done: true, details: ["Copy de retargeting pronta"] },
-        { role: "Produtor", title: "Produtor", done: true, details: ["Criativos dinamicos configurados"] },
-        { role: "Publicador", title: "Publicador", done: true, details: ["Publicado em 26/02"] },
-        {
-          role: "Analista",
-          title: "Analista",
-          done: false,
-          details: ["CTR: 1.8%", "Frequencia: 2.3x"],
-        },
-      ],
+      theme: "Tempo",
+      hook: "Menos desgaste vendendo sozinho",
+      pillar: "Tempo",
+      progress: { current: 1, total: 5 },
     },
   ],
-  decisao: [
+  aprovacao: [
     {
-      id: "c6",
-      title: "Consorcio Especial",
-      theme: "Financeiro",
-      platform: "google",
-      budget: "R$ 100/dia",
-      status: "Em analise",
-      dueDate: "2026-03-09",
-      week: "SEM 14",
-      priority: "alta",
-      tags: ["Consorcio", "Financeiro"],
-      pipeline: [
-        { role: "Estrategista", title: "Estrategista", done: true, details: ["Estrategia definida"] },
-        { role: "Roteirista", title: "Roteirista", done: true, details: ["Scripts aprovados"] },
-        { role: "Produtor", title: "Produtor", done: true, details: ["Materiais produzidos"] },
-        { role: "Publicador", title: "Publicador", done: true, details: ["Publicado em 02/03"] },
-        {
-          role: "Analista",
-          title: "Analista",
-          done: true,
-          details: [
-            "ROAS: 3.8x (abaixo da meta de 4x)",
-            "CPL: R$ 92 (acima do limite R$85)",
-            "Recomendacao: ajustar publico e reduzir CPC",
-          ],
-        },
-      ],
-    },
-    {
-      id: "c7",
-      title: "Revisao Programada",
-      theme: "Pos-venda",
-      platform: "meta",
-      budget: "R$ 40/dia",
-      status: "Em analise",
-      dueDate: "2026-03-11",
-      week: "SEM 14",
-      priority: "baixa",
-      tags: ["Pos-venda", "Servicos"],
-      pipeline: [
-        { role: "Estrategista", title: "Estrategista", done: true, details: ["Ok"] },
-        { role: "Roteirista", title: "Roteirista", done: true, details: ["Ok"] },
-        { role: "Produtor", title: "Produtor", done: true, details: ["Ok"] },
-        { role: "Publicador", title: "Publicador", done: true, details: ["Publicado"] },
-        {
-          role: "Analista",
-          title: "Analista",
-          done: true,
-          details: ["ROAS: 5.2x", "Recomendacao: escalar verba"],
-        },
-      ],
-    },
-  ],
-  concluido: [
-    {
-      id: "c11",
-      title: "Natal 2025",
-      theme: "Sazonal",
+      id: "3",
+      title: "Consignação - Preço: Proteja seu valor",
       platform: "meta+google",
-      budget: "R$ 250/dia",
-      status: "Finalizada",
-      dueDate: "2025-12-25",
-      week: "SEM 52",
-      priority: "media",
-      tags: ["Sazonal", "Natal"],
-      pipeline: [
-        { role: "Estrategista", title: "Estrategista", done: true, details: ["Concluido"] },
-        { role: "Roteirista", title: "Roteirista", done: true, details: ["Concluido"] },
-        { role: "Produtor", title: "Produtor", done: true, details: ["Concluido"] },
-        { role: "Publicador", title: "Publicador", done: true, details: ["Concluido"] },
-        {
-          role: "Analista",
-          title: "Analista",
-          done: true,
-          details: ["ROAS final: 6.1x", "147 leads gerados", "Campanha encerrada com sucesso"],
-        },
-      ],
+      budget: "R$ 30",
+      status: "ENDED",
+      week: "SEM 11",
+      theme: "Preço",
+      hook: "Sem medo de perder dinheiro",
+      pillar: "Preço",
+      progress: { current: 2, total: 5 },
+    },
+  ],
+  publicado: [
+    {
+      id: "4",
+      title: "Consignação - Segurança: Tranquilidade total",
+      platform: "meta",
+      budget: "R$ 30",
+      status: "ACTIVE",
+      week: "SEM 10",
+      theme: "Segurança",
+      hook: "Nunca mais caia em golpe",
+      pillar: "Segurança",
+      progress: { current: 5, total: 5 },
+      metrics: { impressions: "10K", cpl: "R$ 30,00" },
+    },
+  ],
+  monitor: [
+    {
+      id: "5",
+      title: "Consignação - Tempo: Rápido e seguro",
+      platform: "google",
+      budget: "R$ 30",
+      status: "ACTIVE",
+      week: "SEM 09",
+      theme: "Tempo",
+      hook: "Venda em minutos",
+      pillar: "Tempo",
+      progress: { current: 5, total: 5 },
+      metrics: { impressions: "8K", cpl: "R$ 25,00" },
     },
   ],
 }
 
 // ─── KPI Demo Data ──────────────────────────────────────
-
-export const metaKpis: KpiCard[] = [
-  { label: "Investimento", value: "R$ 84.500", change: 12.3, trend: "up", platform: "meta", description: "Gasto total no periodo" },
-  { label: "Impressoes", value: "1.2M", change: 8.7, trend: "up", platform: "meta", description: "Total de visualizacoes" },
-  { label: "Cliques", value: "34.821", change: -2.1, trend: "down", platform: "meta", description: "Cliques nos anuncios" },
-  { label: "CTR", value: "2,89%", change: 0.3, trend: "up", platform: "meta", description: "Taxa de cliques" },
-  { label: "CPM", value: "R$ 18,40", change: -5.2, trend: "down", platform: "meta", description: "Custo por mil impressoes" },
-  { label: "Leads", value: "1.247", change: 15.6, trend: "up", platform: "meta", description: "Contatos gerados" },
-  { label: "CPL", value: "R$ 67,74", change: -8.3, trend: "down", platform: "meta", description: "Custo por lead" },
-  { label: "ROAS", value: "4.2x", change: 11.0, trend: "up", platform: "meta", description: "Retorno sobre investimento" },
+export const topKpiCards = [
+  { label: "Gasto Total", value: "R$ 146.800", change: 8.5, trend: "up" as const },
+  { label: "Conversas (WhatsApp)", value: "2.139", change: 15.2, trend: "up" as const },
+  { label: "CPL Medio", value: "R$ 68,60", change: -5.1, trend: "down" as const },
+  { label: "Campanhas (total)", value: "24", change: 12.0, trend: "up" as const },
+  { label: "Quarentena (ativo)", value: "2/4", change: 0, trend: "neutral" as const },
 ]
 
-export const googleKpis: KpiCard[] = [
-  { label: "Investimento", value: "R$ 62.300", change: 5.8, trend: "up", platform: "google", description: "Gasto total no periodo" },
-  { label: "Impressoes", value: "890K", change: 3.2, trend: "up", platform: "google", description: "Total de visualizacoes" },
-  { label: "Cliques", value: "28.456", change: 7.4, trend: "up", platform: "google", description: "Cliques nos anuncios" },
-  { label: "CTR", value: "3,19%", change: 1.1, trend: "up", platform: "google", description: "Taxa de cliques" },
-  { label: "CPC", value: "R$ 2,19", change: -3.7, trend: "down", platform: "google", description: "Custo por clique" },
-  { label: "Conversoes", value: "892", change: 22.1, trend: "up", platform: "google", description: "Conversoes realizadas" },
-  { label: "CPA", value: "R$ 69,84", change: -12.5, trend: "down", platform: "google", description: "Custo por aquisicao" },
-  { label: "ROAS", value: "5.1x", change: 18.3, trend: "up", platform: "google", description: "Retorno sobre investimento" },
+export interface CampaignAnalysis {
+  campaign: string
+  gasto: string
+  conv: number
+  cpl: string
+  alcance: string
+  freq: number
+  ctr: string
+  status: string
+  diagnostico: string
+}
+
+export const metaAdsAnalysis: CampaignAnalysis[] = [
+  { campaign: "Seguranca - Protecao Total", gasto: "R$ 15.000", conv: 124, cpl: "R$ 120,97", alcance: "45.2K", freq: 2.3, ctr: "2.1%", status: "Otimo", diagnostico: "Performance acima da media" },
+  { campaign: "Preco - Oferta Imperdivel", gasto: "R$ 22.000", conv: 89, cpl: "R$ 247,19", alcance: "78.5K", freq: 1.8, ctr: "1.8%", status: "Ruim", diagnostico: "CPL elevado, revisar criativos" },
+  { campaign: "Economia - Poupe Dinheiro", gasto: "R$ 25.000", conv: 247, cpl: "R$ 101,21", alcance: "92.1K", freq: 2.1, ctr: "2.5%", status: "Bom", diagnostico: "Alcance bom, otimizar para conversoes" },
+  { campaign: "Conforto - Dirija com Estilo", gasto: "R$ 18.000", conv: 156, cpl: "R$ 115,38", alcance: "67.8K", freq: 2.0, ctr: "2.3%", status: "Otimo", diagnostico: "Equilibrio perfeito" },
 ]
 
 // ─── Settings Demo Data ─────────────────────────────────
-
+// ─── Configurações do motor ─────────────────────────────────
+// os genéricos foram substituídos por parâmetros específicos
 export const initialToggles: SettingToggle[] = [
-  { id: "auto-pause", label: "Pausa automatica", description: "Pausar campanhas quando CPL ultrapassar o limite definido", enabled: true, category: "automacao" },
-  { id: "auto-budget", label: "Redistribuicao de verba", description: "Realocar verba automaticamente para campanhas com melhor ROAS", enabled: false, category: "otimizacao" },
-  { id: "ab-testing", label: "Teste A/B automatico", description: "Criar variacoes de criativos e testar automaticamente", enabled: true, category: "otimizacao" },
-  { id: "notifications", label: "Alertas por e-mail", description: "Receber notificacoes quando metricas cairem abaixo do esperado", enabled: true, category: "notificacao" },
-  { id: "report-weekly", label: "Relatorio semanal", description: "Enviar resumo de performance toda segunda-feira as 8h", enabled: true, category: "notificacao" },
-  { id: "competitor-watch", label: "Monitoramento de concorrencia", description: "Rastrear anuncios de concorrentes na regiao", enabled: false, category: "otimizacao" },
+  { id: "allow-auto-create", label: "Permitir criação automática", description: "Gerar campanhas automaticamente baseado em briefing", enabled: true },
+  { id: "allow-auto-activate", label: "Permitir ativação automática", description: "Publicar campanhas assim que aprovadas", enabled: true },
+  { id: "allow-budget-increase", label: "Permitir aumento de orçamento", description: "Escalar orçamento de campanhas performáticas", enabled: false },
+  { id: "duplication-allowed", label: "Duplicação permitida", description: "Permitir duplicação de campanhas bem-sucedidas", enabled: false },
+  { id: "edit-existing-allowed", label: "Edição de existentes permitida", description: "Modificar campanhas já publicadas", enabled: false },
+  { id: "quarantine-active", label: "Quarentena ativa", description: "Sistema de quarentena para campanhas ruins", enabled: true },
+  { id: "kill-switch-active", label: "Kill switch ativo", description: "Desligar motor completamente em emergência", enabled: false },
 ]
 
 export const initialLimits: OperationalLimit[] = [
-  { id: "max-cpl", label: "CPL maximo", value: 85, unit: "R$", min: 10, max: 200, step: 5 },
-  { id: "min-roas", label: "ROAS minimo", value: 3, unit: "x", min: 1, max: 10, step: 0.5 },
-  { id: "daily-budget", label: "Verba diaria", value: 5000, unit: "R$", min: 500, max: 20000, step: 500 },
-  { id: "max-cpc", label: "CPC maximo", value: 4, unit: "R$", min: 0.5, max: 15, step: 0.5 },
-  { id: "frequency-cap", label: "Frequencia maxima", value: 5, unit: "x/semana", min: 1, max: 15, step: 1 },
+  { id: "max-daily-budget", label: "Orçamento diário máximo", value: 30, unit: "R$", max: 100 },
+  { id: "max-campaigns-week-meta", label: "Max campanhas Meta/semana", value: 1, unit: "", max: 5 },
+  { id: "max-campaigns-week-google", label: "Max campanhas Google/semana", value: 1, unit: "", max: 5 },
+  { id: "cooldown-hours", label: "Cooldown entre campanhas (h)", value: 72, unit: "h", max: 168 },
+  { id: "max-total-daily-spend", label: "Gasto diário total máximo", value: 100, unit: "R$", max: 1000 },
+  { id: "quarantine-weeks-left", label: "Semanas restantes quarentena", value: 3, unit: "", max: 4 },
 ]
-
 // ─── Security Checklist ─────────────────────────────────
-
 export const initialSecurityItems: SecurityItem[] = [
-  { id: "pixel-meta", label: "Pixel Meta instalado", description: "Pixel ativo em todas as paginas do site da concessionaria", checked: true, priority: "critica", category: "tracking" },
-  { id: "gtag", label: "Google Tag configurada", description: "Tag de conversao do Google Ads instalada e verificada", checked: true, priority: "critica", category: "tracking" },
-  { id: "api-tokens", label: "Tokens de API renovados", description: "Tokens de acesso Meta e Google dentro da validade", checked: false, priority: "critica", category: "acesso" },
-  { id: "2fa", label: "Autenticacao 2FA ativa", description: "Dois fatores habilitado em Meta Business e Google Ads", checked: true, priority: "critica", category: "acesso" },
-  { id: "domain-verify", label: "Dominio verificado", description: "Dominio da concessionaria verificado no Meta Business Manager", checked: true, priority: "critica", category: "configuracao" },
-  { id: "conversion-api", label: "Conversion API configurada", description: "API de conversoes do Meta para server-side tracking", checked: true, priority: "importante", category: "tracking" },
-  { id: "access-review", label: "Revisao de acessos", description: "Permissoes de colaboradores verificadas nas plataformas", checked: false, priority: "importante", category: "acesso" },
-  { id: "utm-standard", label: "Padrao UTM definido", description: "Convencao de nomenclatura UTM documentada e aplicada", checked: true, priority: "importante", category: "configuracao" },
-  { id: "billing-check", label: "Metodo de pagamento validado", description: "Cartao e limites de faturamento verificados", checked: true, priority: "importante", category: "configuracao" },
-  { id: "backup-audiences", label: "Backup de publicos", description: "Publicos personalizados exportados e armazenados", checked: false, priority: "recomendada", category: "configuracao" },
+  // Hetzner
+  { id: "hetzner-1", label: "Servidor provisionado", description: "Instancia VPS criada no Hetzner", checked: true, priority: "alta", category: "hetzner" },
+  { id: "hetzner-2", label: "Firewall configurado", description: "Regras de firewall aplicadas", checked: true, priority: "alta", category: "hetzner" },
+  { id: "hetzner-3", label: "SSL instalado", description: "Certificado SSL Let's Encrypt ativo", checked: true, priority: "alta", category: "hetzner" },
+  { id: "hetzner-4", label: "Backup automatico", description: "Sistema de backup diario configurado", checked: false, priority: "media", category: "hetzner" },
+  { id: "hetzner-5", label: "Monitoramento ativo", description: "Alertas de uptime e performance", checked: true, priority: "media", category: "hetzner" },
+  { id: "hetzner-6", label: "Atualizacoes de sistema", description: "SO e pacotes atualizados", checked: false, priority: "baixa", category: "hetzner" },
+  { id: "hetzner-7", label: "Logs centralizados", description: "Sistema de logs configurado", checked: true, priority: "baixa", category: "hetzner" },
+  { id: "hetzner-8", label: "Seguranca SSH", description: "Chaves SSH e desabilitacao root", checked: true, priority: "alta", category: "hetzner" },
+  { id: "hetzner-9", label: "Fail2Ban ativo", description: "Protecao contra brute force", checked: true, priority: "media", category: "hetzner" },
+
+  // Meta Ads
+  { id: "meta-1", label: "Conta Business Manager", description: "Conta Meta Business criada e verificada", checked: true, priority: "alta", category: "meta-ads" },
+  { id: "meta-2", label: "Pixel Meta instalado", description: "Pixel ativo em todas as paginas", checked: true, priority: "alta", category: "meta-ads" },
+  { id: "meta-3", label: "Conversion API", description: "API de conversoes configurada", checked: true, priority: "alta", category: "meta-ads" },
+  { id: "meta-4", label: "Catalogo de produtos", description: "Catalogo atualizado no Commerce Manager", checked: false, priority: "media", category: "meta-ads" },
+  { id: "meta-5", label: "Audiencias personalizadas", description: "Publicos criados e segmentados", checked: true, priority: "media", category: "meta-ads" },
+  { id: "meta-6", label: "2FA ativado", description: "Autenticacao em dois fatores", checked: true, priority: "alta", category: "meta-ads" },
+  { id: "meta-7", label: "Metodo de pagamento", description: "Cartao valido e limites definidos", checked: true, priority: "alta", category: "meta-ads" },
+  { id: "meta-8", label: "Permissoes de acesso", description: "Usuarios com permissoes corretas", checked: false, priority: "media", category: "meta-ads" },
+  { id: "meta-9", label: "Dominio verificado", description: "Dominio da empresa verificado", checked: true, priority: "alta", category: "meta-ads" },
+
+  // Google Ads
+  { id: "google-1", label: "Conta Google Ads", description: "Conta criada e verificada", checked: true, priority: "alta", category: "google-ads" },
+  { id: "google-2", label: "Google Tag Manager", description: "GTM instalado no site", checked: true, priority: "alta", category: "google-ads" },
+  { id: "google-3", label: "Google Analytics", description: "GA4 configurado e ativo", checked: true, priority: "alta", category: "google-ads" },
+  { id: "google-4", label: "Conversoes rastreadas", description: "Eventos de conversao definidos", checked: true, priority: "alta", category: "google-ads" },
+  { id: "google-5", label: "Extensoes de anuncio", description: "Sitelink, local e chamadas configuradas", checked: false, priority: "media", category: "google-ads" },
+  { id: "google-6", label: "Orcamento definido", description: "Limites diarios e mensais", checked: true, priority: "media", category: "google-ads" },
+  { id: "google-7", label: "Palavras-chave negativas", description: "Lista de negativas atualizada", checked: false, priority: "media", category: "google-ads" },
+  { id: "google-8", label: "Remarketing ativo", description: "Listas de remarketing criadas", checked: true, priority: "baixa", category: "google-ads" },
+  { id: "google-9", label: "Relatorios automaticos", description: "Dashboards e alertas configurados", checked: false, priority: "baixa", category: "google-ads" },
+
+  // LP + OpenClaw
+  { id: "lp-1", label: "Landing Pages criadas", description: "Pags de destino otimizadas", checked: true, priority: "alta", category: "lp-openclaw" },
+  { id: "lp-2", label: "Formularios funcionais", description: "Captura de leads funcionando", checked: true, priority: "alta", category: "lp-openclaw" },
+  { id: "lp-3", label: "Integracao WhatsApp", description: "Botao de contato via WhatsApp", checked: true, priority: "alta", category: "lp-openclaw" },
+  { id: "lp-4", label: "OpenClaw configurado", description: "Sistema de automacao ativo", checked: true, priority: "alta", category: "lp-openclaw" },
+  { id: "lp-5", label: "Templates padronizados", description: "Modelos de LP consistentes", checked: false, priority: "media", category: "lp-openclaw" },
+  { id: "lp-6", label: "Teste A/B ativo", description: "Otimizacao de conversao", checked: true, priority: "media", category: "lp-openclaw" },
+  { id: "lp-7", label: "Analytics integrado", description: "Rastreamento de performance", checked: true, priority: "media", category: "lp-openclaw" },
+  { id: "lp-8", label: "Backup de dados", description: "Leads exportados regularmente", checked: false, priority: "baixa", category: "lp-openclaw" },
 ]
