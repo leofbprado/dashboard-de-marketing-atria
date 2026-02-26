@@ -16,38 +16,38 @@ import {
 export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-[1280px] px-4 py-6 sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-6">
+      <div className="mx-auto max-w-[1400px] px-4 py-5 sm:px-6 lg:px-8">
+        <div className="flex flex-col gap-5">
           <DashboardHeader />
 
-          <Tabs defaultValue="kanban" className="flex flex-col gap-6">
-            <TabsList className="bg-muted/60 border border-border w-fit">
+          <Tabs defaultValue="kanban" className="flex flex-col gap-5">
+            <TabsList className="bg-card border border-border shadow-sm w-fit h-11 px-1">
               <TabsTrigger
                 value="kanban"
-                className="gap-1.5 text-xs data-[state=active]:bg-card data-[state=active]:shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]"
+                className="gap-2 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none rounded-lg px-4 h-9 transition-all"
               >
-                <Columns3 className="size-3.5" />
+                <Columns3 className="size-4" />
                 <span className="hidden sm:inline">Kanban</span>
               </TabsTrigger>
               <TabsTrigger
                 value="kpis"
-                className="gap-1.5 text-xs data-[state=active]:bg-card data-[state=active]:shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]"
+                className="gap-2 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none rounded-lg px-4 h-9 transition-all"
               >
-                <BarChart3 className="size-3.5" />
+                <BarChart3 className="size-4" />
                 <span className="hidden sm:inline">KPIs</span>
               </TabsTrigger>
               <TabsTrigger
                 value="settings"
-                className="gap-1.5 text-xs data-[state=active]:bg-card data-[state=active]:shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]"
+                className="gap-2 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none rounded-lg px-4 h-9 transition-all"
               >
-                <Settings2 className="size-3.5" />
+                <Settings2 className="size-4" />
                 <span className="hidden sm:inline">Configuracoes</span>
               </TabsTrigger>
               <TabsTrigger
                 value="security"
-                className="gap-1.5 text-xs data-[state=active]:bg-card data-[state=active]:shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]"
+                className="gap-2 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none rounded-lg px-4 h-9 transition-all"
               >
-                <ShieldCheck className="size-3.5" />
+                <ShieldCheck className="size-4" />
                 <span className="hidden sm:inline">Seguranca</span>
               </TabsTrigger>
             </TabsList>

@@ -14,10 +14,10 @@ import {
 } from "@/lib/dashboard-data"
 import { Zap, SlidersHorizontal, Bell, Sparkles } from "lucide-react"
 
-const categoryIcons = {
-  automacao: Zap,
-  notificacao: Bell,
-  otimizacao: Sparkles,
+const categoryConfig: Record<string, { icon: typeof Zap; color: string; bg: string }> = {
+  automacao:   { icon: Zap,      color: "text-[#4c6ef5]", bg: "bg-[#4c6ef5]/10" },
+  notificacao: { icon: Bell,     color: "text-[#f76707]", bg: "bg-[#f76707]/10" },
+  otimizacao:  { icon: Sparkles, color: "text-[#7950f2]", bg: "bg-[#7950f2]/10" },
 }
 
 function ToggleRow({
@@ -27,16 +27,17 @@ function ToggleRow({
   toggle: SettingToggle
   onToggle: (id: string) => void
 }) {
-  const Icon = categoryIcons[toggle.category]
+  const config = categoryConfig[toggle.category]
+  const Icon = config.icon
   return (
     <div className="flex items-start gap-3 py-4 first:pt-0 last:pb-0 border-b border-border last:border-0">
-      <div className="flex items-center justify-center size-8 rounded-lg bg-muted shrink-0 mt-0.5">
-        <Icon className="size-3.5 text-muted-foreground" />
+      <div className={`flex items-center justify-center size-9 rounded-xl ${config.bg} shrink-0 mt-0.5`}>
+        <Icon className={`size-4 ${config.color}`} />
       </div>
       <div className="flex-1 min-w-0">
         <Label
           htmlFor={toggle.id}
-          className="text-[13px] font-medium text-foreground cursor-pointer"
+          className="text-[13px] font-semibold text-card-foreground cursor-pointer"
         >
           {toggle.label}
         </Label>
@@ -69,10 +70,10 @@ function LimitRow({
   return (
     <div className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 border-b border-border last:border-0">
       <div className="flex items-center justify-between">
-        <Label className="text-[13px] font-medium text-foreground">
+        <Label className="text-[13px] font-semibold text-card-foreground">
           {limit.label}
         </Label>
-        <Badge variant="outline" className="text-[11px] font-mono tabular-nums px-2">
+        <Badge className="bg-primary/10 text-primary border-0 text-[11px] font-mono font-bold tabular-nums px-2.5 hover:bg-primary/10">
           {displayValue}
         </Badge>
       </div>
@@ -84,7 +85,7 @@ function LimitRow({
         onValueChange={([val]) => onChange(limit.id, val)}
         className="w-full"
       />
-      <div className="flex justify-between text-[10px] text-muted-foreground tabular-nums">
+      <div className="flex justify-between text-[10px] text-muted-foreground font-medium tabular-nums">
         <span>
           {limit.unit === "R$"
             ? `R$ ${limit.min.toLocaleString("pt-BR")}`
@@ -121,7 +122,7 @@ export function SettingsTab() {
   return (
     <section className="flex flex-col gap-6" aria-label="Configuracoes">
       <div>
-        <h2 className="text-base font-semibold text-foreground">Configuracoes</h2>
+        <h2 className="text-lg font-bold text-foreground">Configuracoes</h2>
         <p className="text-sm text-muted-foreground mt-0.5">
           Controle de automacoes e limites operacionais das campanhas
         </p>
@@ -129,22 +130,23 @@ export function SettingsTab() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Automacoes */}
-        <Card className="border-border shadow-[0_1px_3px_0_rgba(0,0,0,0.04)]">
+        <Card className="border-border shadow-sm overflow-hidden">
+          <div className="h-1 bg-gradient-to-r from-[#4c6ef5] to-[#7950f2]" />
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="flex items-center justify-center size-8 rounded-lg bg-primary/[0.08]">
-                  <Zap className="size-4 text-primary" />
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center size-10 rounded-xl bg-[#4c6ef5]/10">
+                  <Zap className="size-5 text-[#4c6ef5]" />
                 </div>
                 <div>
-                  <CardTitle className="text-sm">Automacoes</CardTitle>
-                  <CardDescription className="text-[11px]">
+                  <CardTitle className="text-base font-bold">Automacoes</CardTitle>
+                  <CardDescription className="text-xs">
                     Regras de otimizacao automatica
                   </CardDescription>
                 </div>
               </div>
-              <Badge variant="secondary" className="text-[11px] tabular-nums">
-                {activeCount}/{toggles.length} ativas
+              <Badge className="bg-[#12b886]/10 text-[#12b886] border-0 font-bold text-xs tabular-nums hover:bg-[#12b886]/10">
+                {activeCount}/{toggles.length}
               </Badge>
             </div>
           </CardHeader>
@@ -156,15 +158,16 @@ export function SettingsTab() {
         </Card>
 
         {/* Limites */}
-        <Card className="border-border shadow-[0_1px_3px_0_rgba(0,0,0,0.04)]">
+        <Card className="border-border shadow-sm overflow-hidden">
+          <div className="h-1 bg-gradient-to-r from-[#fab005] to-[#f76707]" />
           <CardHeader className="pb-4">
-            <div className="flex items-center gap-2.5">
-              <div className="flex items-center justify-center size-8 rounded-lg bg-warning/[0.08]">
-                <SlidersHorizontal className="size-4 text-warning" />
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center size-10 rounded-xl bg-[#fab005]/10">
+                <SlidersHorizontal className="size-5 text-[#fab005]" />
               </div>
               <div>
-                <CardTitle className="text-sm">Limites Operacionais</CardTitle>
-                <CardDescription className="text-[11px]">
+                <CardTitle className="text-base font-bold">Limites Operacionais</CardTitle>
+                <CardDescription className="text-xs">
                   Defina thresholds para pausa e alertas
                 </CardDescription>
               </div>

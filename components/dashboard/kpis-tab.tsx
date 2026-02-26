@@ -4,15 +4,15 @@ import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { metaKpis, googleKpis, type KpiCard } from "@/lib/dashboard-data"
-import { TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, DollarSign, Users, BarChart3 } from "lucide-react"
+import { ArrowUpRight, ArrowDownRight, DollarSign, Users, BarChart3, TrendingUp } from "lucide-react"
 
 function TrendBadge({ trend, change }: { trend: KpiCard["trend"]; change: number }) {
   const abs = Math.abs(change)
   const isPositive = trend === "up"
   return (
     <span
-      className={`inline-flex items-center gap-0.5 text-[11px] font-semibold ${
-        isPositive ? "text-success" : "text-destructive"
+      className={`inline-flex items-center gap-0.5 text-[11px] font-bold px-2 py-0.5 rounded-full ${
+        isPositive ? "bg-[#12b886]/10 text-[#12b886]" : "bg-[#ff6b6b]/10 text-[#ff6b6b]"
       }`}
     >
       {isPositive ? (
@@ -27,15 +27,15 @@ function TrendBadge({ trend, change }: { trend: KpiCard["trend"]; change: number
 
 function MetricCard({ kpi }: { kpi: KpiCard }) {
   return (
-    <Card className="border-border bg-card shadow-[0_1px_3px_0_rgba(0,0,0,0.04)] hover:shadow-[0_2px_6px_0_rgba(0,0,0,0.06)] transition-shadow py-0">
-      <CardContent className="p-4 flex flex-col gap-2">
+    <Card className="border-border bg-card shadow-sm hover:shadow-md hover:border-primary/20 transition-all py-0 overflow-hidden">
+      <CardContent className="p-4 flex flex-col gap-2.5">
         <div className="flex items-center justify-between">
-          <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+          <span className="text-xs font-medium text-muted-foreground">
             {kpi.label}
           </span>
           <TrendBadge trend={kpi.trend} change={kpi.change} />
         </div>
-        <span className="text-xl font-bold text-foreground tracking-tight tabular-nums">
+        <span className="text-2xl font-bold text-card-foreground tracking-tight tabular-nums">
           {kpi.value}
         </span>
         <span className="text-[11px] text-muted-foreground leading-tight">
@@ -51,32 +51,30 @@ function SummaryCard({
   value,
   subtext,
   icon,
-  accentBg,
-  accentText,
+  gradient,
 }: {
   label: string
   value: string
   subtext: string
   icon: React.ReactNode
-  accentBg: string
-  accentText: string
+  gradient: string
 }) {
   return (
-    <Card className="border-border bg-card shadow-[0_1px_3px_0_rgba(0,0,0,0.04)] py-0">
-      <CardContent className="p-5 flex items-center gap-4">
-        <div
-          className={`flex items-center justify-center size-11 rounded-xl ${accentBg}`}
-        >
-          <span className={accentText}>{icon}</span>
-        </div>
-        <div className="flex flex-col gap-0.5">
-          <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-            {label}
-          </span>
-          <span className="text-xl font-bold text-foreground tracking-tight">
-            {value}
-          </span>
-          <span className="text-[11px] text-muted-foreground">{subtext}</span>
+    <Card className="border-0 shadow-md overflow-hidden py-0">
+      <CardContent className="p-0">
+        <div className={`${gradient} p-5 flex items-center gap-4`}>
+          <div className="flex items-center justify-center size-12 rounded-xl bg-[#ffffff]/20 backdrop-blur-sm">
+            <span className="text-[#ffffff]">{icon}</span>
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-xs font-medium text-[#ffffff]/70">
+              {label}
+            </span>
+            <span className="text-2xl font-bold text-[#ffffff] tracking-tight">
+              {value}
+            </span>
+            <span className="text-[11px] text-[#ffffff]/60">{subtext}</span>
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -86,18 +84,20 @@ function SummaryCard({
 function PlatformSection({
   title,
   platformColor,
+  platformBg,
   kpis,
 }: {
   title: string
   platformColor: string
+  platformBg: string
   kpis: KpiCard[]
 }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-2.5">
-        <span className={`size-2.5 rounded-full ${platformColor}`} />
-        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-        <Badge variant="outline" className="text-[10px] font-normal text-muted-foreground ml-auto">
+        <span className={`size-3 rounded-full ${platformColor}`} />
+        <h3 className="text-base font-bold text-foreground">{title}</h3>
+        <Badge className={`${platformBg} border-0 text-xs font-medium ml-auto hover:opacity-90`}>
           Ultimos 30 dias
         </Badge>
       </div>
@@ -113,63 +113,69 @@ function PlatformSection({
 export function KpisTab() {
   const [filter, setFilter] = useState<"all" | "meta" | "google">("all")
 
+  const filterOptions = [
+    { key: "all" as const, label: "Todas", color: "" },
+    { key: "meta" as const, label: "Meta Ads", color: "data-[active=true]:bg-[#1877f2] data-[active=true]:text-[#ffffff]" },
+    { key: "google" as const, label: "Google Ads", color: "data-[active=true]:bg-[#34a853] data-[active=true]:text-[#ffffff]" },
+  ]
+
   return (
     <section className="flex flex-col gap-6" aria-label="KPIs de Performance">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-base font-semibold text-foreground">Metricas de Performance</h2>
+          <h2 className="text-lg font-bold text-foreground">Metricas de Performance</h2>
           <p className="text-sm text-muted-foreground mt-0.5">
             Acompanhamento de KPIs das plataformas de anuncio
           </p>
         </div>
         <div
-          className="inline-flex items-center rounded-lg border border-border bg-muted/50 p-0.5"
+          className="inline-flex items-center rounded-xl border border-border bg-card p-1 shadow-sm"
           role="tablist"
           aria-label="Filtro de plataforma"
         >
-          {(["all", "meta", "google"] as const).map((f) => (
+          {filterOptions.map((f) => (
             <button
-              key={f}
+              key={f.key}
               role="tab"
-              aria-selected={filter === f}
-              onClick={() => setFilter(f)}
-              className={`px-3.5 py-1.5 text-xs font-medium rounded-md transition-all ${
-                filter === f
-                  ? "bg-card text-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]"
+              aria-selected={filter === f.key}
+              data-active={filter === f.key}
+              onClick={() => setFilter(f.key)}
+              className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
+                filter === f.key
+                  ? f.key === "all"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : ""
                   : "text-muted-foreground hover:text-foreground"
-              }`}
+              } ${f.color}`}
             >
-              {f === "all" ? "Todas" : f === "meta" ? "Meta Ads" : "Google Ads"}
+              {f.label}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Summary */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      {/* Summary cards with colored gradients */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <SummaryCard
           label="Investimento Total"
           value="R$ 146.800"
           subtext="Acumulado no periodo"
           icon={<DollarSign className="size-5" />}
-          accentBg="bg-primary/[0.08]"
-          accentText="text-primary"
+          gradient="bg-gradient-to-br from-[#4c6ef5] to-[#5c7cfa]"
         />
         <SummaryCard
           label="Total de Leads"
           value="2.139"
           subtext="+18,9% vs. mes anterior"
           icon={<Users className="size-5" />}
-          accentBg="bg-success/[0.08]"
-          accentText="text-success"
+          gradient="bg-gradient-to-br from-[#12b886] to-[#20c997]"
         />
         <SummaryCard
           label="ROAS Medio"
           value="4.65x"
           subtext="Meta e Google combinados"
-          icon={<BarChart3 className="size-5" />}
-          accentBg="bg-chart-2/[0.08]"
-          accentText="text-chart-2"
+          icon={<TrendingUp className="size-5" />}
+          gradient="bg-gradient-to-br from-[#7950f2] to-[#9775fa]"
         />
       </div>
 
@@ -178,14 +184,16 @@ export function KpisTab() {
         {(filter === "all" || filter === "meta") && (
           <PlatformSection
             title="Meta Ads"
-            platformColor="bg-info"
+            platformColor="bg-[#1877f2]"
+            platformBg="bg-[#1877f2]/10 text-[#1877f2]"
             kpis={metaKpis}
           />
         )}
         {(filter === "all" || filter === "google") && (
           <PlatformSection
             title="Google Ads"
-            platformColor="bg-chart-2"
+            platformColor="bg-[#34a853]"
+            platformBg="bg-[#34a853]/10 text-[#34a853]"
             kpis={googleKpis}
           />
         )}

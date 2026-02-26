@@ -23,28 +23,31 @@ import {
 
 const priorityConfig: Record<
   SecurityItem["priority"],
-  { label: string; badgeClass: string; icon: typeof ShieldAlert; iconClass: string; bgClass: string }
+  { label: string; badgeClass: string; icon: typeof ShieldAlert; iconColor: string; bgColor: string; borderColor: string }
 > = {
   critica: {
     label: "Critica",
-    badgeClass: "bg-destructive/10 text-destructive border-destructive/20",
+    badgeClass: "bg-[#ff6b6b]/10 text-[#ff6b6b] border-0",
     icon: ShieldAlert,
-    iconClass: "text-destructive",
-    bgClass: "bg-destructive/[0.06]",
+    iconColor: "text-[#ff6b6b]",
+    bgColor: "bg-[#ff6b6b]/10",
+    borderColor: "from-[#ff6b6b] to-[#f03e3e]",
   },
   importante: {
     label: "Importante",
-    badgeClass: "bg-warning/10 text-warning border-warning/20",
+    badgeClass: "bg-[#fab005]/10 text-[#fab005] border-0",
     icon: ShieldCheck,
-    iconClass: "text-warning",
-    bgClass: "bg-warning/[0.06]",
+    iconColor: "text-[#fab005]",
+    bgColor: "bg-[#fab005]/10",
+    borderColor: "from-[#fab005] to-[#f76707]",
   },
   recomendada: {
     label: "Recomendada",
-    badgeClass: "bg-muted text-muted-foreground border-border",
+    badgeClass: "bg-[#868e96]/10 text-[#868e96] border-0",
     icon: ShieldQuestion,
-    iconClass: "text-muted-foreground",
-    bgClass: "bg-muted",
+    iconColor: "text-[#868e96]",
+    bgColor: "bg-[#868e96]/10",
+    borderColor: "from-[#868e96] to-[#adb5bd]",
   },
 }
 
@@ -68,17 +71,16 @@ function ChecklistItem({
         <div className="flex items-center gap-2 flex-wrap">
           <Label
             htmlFor={item.id}
-            className={`text-[13px] font-medium cursor-pointer transition-colors ${
+            className={`text-[13px] font-semibold cursor-pointer transition-all ${
               item.checked
-                ? "text-muted-foreground line-through"
-                : "text-foreground"
+                ? "text-muted-foreground line-through decoration-muted-foreground/40"
+                : "text-card-foreground"
             }`}
           >
             {item.label}
           </Label>
           <Badge
-            variant="outline"
-            className={`text-[9px] px-1.5 py-0 leading-relaxed ${config.badgeClass}`}
+            className={`text-[10px] px-2 py-0 font-bold leading-relaxed ${config.badgeClass}`}
           >
             {config.label}
           </Badge>
@@ -88,7 +90,7 @@ function ChecklistItem({
         </p>
       </div>
       {item.checked ? (
-        <CheckCircle2 className="size-4 text-success shrink-0 mt-0.5" />
+        <CheckCircle2 className="size-4 text-[#12b886] shrink-0 mt-0.5" />
       ) : (
         <Circle className="size-4 text-border shrink-0 mt-0.5" />
       )}
@@ -101,30 +103,42 @@ function StatCard({
   checked,
   total,
   icon: Icon,
-  iconClass,
-  bgClass,
+  iconColor,
+  bgColor,
 }: {
   label: string
   checked: number
   total: number
   icon: typeof ShieldAlert
-  iconClass: string
-  bgClass: string
+  iconColor: string
+  bgColor: string
 }) {
+  const pct = total > 0 ? Math.round((checked / total) * 100) : 0
   return (
-    <Card className="border-border shadow-[0_1px_3px_0_rgba(0,0,0,0.04)] py-0">
+    <Card className="border-border shadow-sm py-0 overflow-hidden">
       <CardContent className="p-4 flex items-center gap-3">
         <div
-          className={`flex items-center justify-center size-9 rounded-lg ${bgClass}`}
+          className={`flex items-center justify-center size-10 rounded-xl ${bgColor}`}
         >
-          <Icon className={`size-4 ${iconClass}`} />
+          <Icon className={`size-4 ${iconColor}`} />
         </div>
-        <div className="flex flex-col">
-          <span className="text-[11px] text-muted-foreground font-medium">{label}</span>
-          <span className="text-base font-bold text-foreground tabular-nums">
-            {checked}
-            <span className="text-muted-foreground font-normal text-sm">/{total}</span>
-          </span>
+        <div className="flex flex-col flex-1">
+          <span className="text-xs text-muted-foreground font-medium">{label}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-lg font-bold text-card-foreground tabular-nums">
+              {checked}
+              <span className="text-muted-foreground font-normal text-sm">/{total}</span>
+            </span>
+            <Badge className={`text-[10px] font-bold border-0 px-1.5 ${
+              pct === 100 
+                ? "bg-[#12b886]/10 text-[#12b886]" 
+                : pct >= 50 
+                  ? "bg-[#fab005]/10 text-[#fab005]"
+                  : "bg-[#ff6b6b]/10 text-[#ff6b6b]"
+            } hover:opacity-100`}>
+              {pct}%
+            </Badge>
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -164,33 +178,38 @@ export function SecurityTab() {
   return (
     <section className="flex flex-col gap-6" aria-label="Checklist de Seguranca">
       <div>
-        <h2 className="text-base font-semibold text-foreground">Seguranca</h2>
+        <h2 className="text-lg font-bold text-foreground">Seguranca</h2>
         <p className="text-sm text-muted-foreground mt-0.5">
           Checklist de setup e verificacao das plataformas de anuncio
         </p>
       </div>
 
       {/* Progress overview */}
-      <Card className="border-border shadow-[0_1px_3px_0_rgba(0,0,0,0.04)] py-0">
-        <CardContent className="p-5">
+      <Card className="border-0 shadow-md overflow-hidden py-0">
+        <div className="bg-gradient-to-r from-[#4c6ef5] to-[#7950f2] p-5">
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <ShieldCheck className="size-4 text-primary" />
-                <span className="text-sm font-semibold text-foreground">
+                <ShieldCheck className="size-5 text-[#ffffff]" />
+                <span className="text-sm font-bold text-[#ffffff]">
                   Progresso Geral
                 </span>
               </div>
-              <span className="text-sm font-bold text-foreground tabular-nums">
+              <span className="text-2xl font-bold text-[#ffffff] tabular-nums">
                 {stats.pct}%
               </span>
             </div>
-            <Progress value={stats.pct} className="h-2" />
-            <p className="text-[12px] text-muted-foreground">
+            <div className="h-2.5 bg-[#ffffff]/20 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-[#ffffff] rounded-full transition-all duration-500"
+                style={{ width: `${stats.pct}%` }}
+              />
+            </div>
+            <p className="text-[12px] text-[#ffffff]/70">
               {stats.checked} de {stats.total} itens verificados
             </p>
           </div>
-        </CardContent>
+        </div>
       </Card>
 
       {/* Stat cards */}
@@ -200,38 +219,39 @@ export function SecurityTab() {
           checked={stats.critica.checked}
           total={stats.critica.total}
           icon={priorityConfig.critica.icon}
-          iconClass={priorityConfig.critica.iconClass}
-          bgClass={priorityConfig.critica.bgClass}
+          iconColor={priorityConfig.critica.iconColor}
+          bgColor={priorityConfig.critica.bgColor}
         />
         <StatCard
           label="Importante"
           checked={stats.importante.checked}
           total={stats.importante.total}
           icon={priorityConfig.importante.icon}
-          iconClass={priorityConfig.importante.iconClass}
-          bgClass={priorityConfig.importante.bgClass}
+          iconColor={priorityConfig.importante.iconColor}
+          bgColor={priorityConfig.importante.bgColor}
         />
         <StatCard
           label="Recomendada"
           checked={stats.recomendada.checked}
           total={stats.recomendada.total}
           icon={priorityConfig.recomendada.icon}
-          iconClass={priorityConfig.recomendada.iconClass}
-          bgClass={priorityConfig.recomendada.bgClass}
+          iconColor={priorityConfig.recomendada.iconColor}
+          bgColor={priorityConfig.recomendada.bgColor}
         />
       </div>
 
       {/* Checklist cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="border-border shadow-[0_1px_3px_0_rgba(0,0,0,0.04)]">
+        <Card className="border-border shadow-sm overflow-hidden">
+          <div className={`h-1 bg-gradient-to-r ${priorityConfig.critica.borderColor}`} />
           <CardHeader className="pb-2">
-            <div className="flex items-center gap-2.5">
-              <div className={`flex items-center justify-center size-8 rounded-lg ${priorityConfig.critica.bgClass}`}>
-                <ShieldAlert className={`size-4 ${priorityConfig.critica.iconClass}`} />
+            <div className="flex items-center gap-3">
+              <div className={`flex items-center justify-center size-10 rounded-xl ${priorityConfig.critica.bgColor}`}>
+                <ShieldAlert className={`size-5 ${priorityConfig.critica.iconColor}`} />
               </div>
               <div>
-                <CardTitle className="text-sm">Itens Criticos</CardTitle>
-                <CardDescription className="text-[11px]">
+                <CardTitle className="text-base font-bold">Itens Criticos</CardTitle>
+                <CardDescription className="text-xs">
                   Obrigatorios para operacao segura
                 </CardDescription>
               </div>
@@ -249,15 +269,16 @@ export function SecurityTab() {
         </Card>
 
         <div className="flex flex-col gap-6">
-          <Card className="border-border shadow-[0_1px_3px_0_rgba(0,0,0,0.04)]">
+          <Card className="border-border shadow-sm overflow-hidden">
+            <div className={`h-1 bg-gradient-to-r ${priorityConfig.importante.borderColor}`} />
             <CardHeader className="pb-2">
-              <div className="flex items-center gap-2.5">
-                <div className={`flex items-center justify-center size-8 rounded-lg ${priorityConfig.importante.bgClass}`}>
-                  <ShieldCheck className={`size-4 ${priorityConfig.importante.iconClass}`} />
+              <div className="flex items-center gap-3">
+                <div className={`flex items-center justify-center size-10 rounded-xl ${priorityConfig.importante.bgColor}`}>
+                  <ShieldCheck className={`size-5 ${priorityConfig.importante.iconColor}`} />
                 </div>
                 <div>
-                  <CardTitle className="text-sm">Importantes</CardTitle>
-                  <CardDescription className="text-[11px]">
+                  <CardTitle className="text-base font-bold">Importantes</CardTitle>
+                  <CardDescription className="text-xs">
                     Fortemente recomendados
                   </CardDescription>
                 </div>
@@ -274,15 +295,16 @@ export function SecurityTab() {
             </CardContent>
           </Card>
 
-          <Card className="border-border shadow-[0_1px_3px_0_rgba(0,0,0,0.04)]">
+          <Card className="border-border shadow-sm overflow-hidden">
+            <div className={`h-1 bg-gradient-to-r ${priorityConfig.recomendada.borderColor}`} />
             <CardHeader className="pb-2">
-              <div className="flex items-center gap-2.5">
-                <div className={`flex items-center justify-center size-8 rounded-lg ${priorityConfig.recomendada.bgClass}`}>
-                  <ShieldQuestion className={`size-4 ${priorityConfig.recomendada.iconClass}`} />
+              <div className="flex items-center gap-3">
+                <div className={`flex items-center justify-center size-10 rounded-xl ${priorityConfig.recomendada.bgColor}`}>
+                  <ShieldQuestion className={`size-5 ${priorityConfig.recomendada.iconColor}`} />
                 </div>
                 <div>
-                  <CardTitle className="text-sm">Recomendadas</CardTitle>
-                  <CardDescription className="text-[11px]">
+                  <CardTitle className="text-base font-bold">Recomendadas</CardTitle>
+                  <CardDescription className="text-xs">
                     Melhorias opcionais de setup
                   </CardDescription>
                 </div>

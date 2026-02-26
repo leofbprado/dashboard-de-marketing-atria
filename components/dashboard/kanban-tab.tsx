@@ -9,32 +9,49 @@ import {
   type KanbanPhaseId,
   type Campaign,
 } from "@/lib/dashboard-data"
-import { Calendar, DollarSign, GripVertical } from "lucide-react"
+import { Calendar, DollarSign, GripVertical, Plus } from "lucide-react"
 
-const phaseAccents: Record<KanbanPhaseId, string> = {
-  briefing: "bg-muted-foreground",
-  criacao: "bg-info",
-  revisao: "bg-warning",
-  aprovacao: "bg-chart-4",
-  publicacao: "bg-primary",
-  monitoramento: "bg-chart-2",
-  concluido: "bg-success",
+const phaseColors: Record<KanbanPhaseId, { top: string; dot: string; bg: string; count: string }> = {
+  briefing:      { top: "bg-[#868e96]", dot: "bg-[#868e96]", bg: "bg-[#868e96]/5",  count: "bg-[#868e96]/10 text-[#868e96]" },
+  criacao:       { top: "bg-[#4c6ef5]", dot: "bg-[#4c6ef5]", bg: "bg-[#4c6ef5]/5",  count: "bg-[#4c6ef5]/10 text-[#4c6ef5]" },
+  revisao:       { top: "bg-[#fab005]", dot: "bg-[#fab005]", bg: "bg-[#fab005]/5",  count: "bg-[#fab005]/10 text-[#fab005]" },
+  aprovacao:     { top: "bg-[#7950f2]", dot: "bg-[#7950f2]", bg: "bg-[#7950f2]/5",  count: "bg-[#7950f2]/10 text-[#7950f2]" },
+  publicacao:    { top: "bg-[#1098ad]", dot: "bg-[#1098ad]", bg: "bg-[#1098ad]/5",  count: "bg-[#1098ad]/10 text-[#1098ad]" },
+  monitoramento: { top: "bg-[#f76707]", dot: "bg-[#f76707]", bg: "bg-[#f76707]/5",  count: "bg-[#f76707]/10 text-[#f76707]" },
+  concluido:     { top: "bg-[#12b886]", dot: "bg-[#12b886]", bg: "bg-[#12b886]/5",  count: "bg-[#12b886]/10 text-[#12b886]" },
 }
 
-function PlatformDot({ platform }: { platform: "meta" | "google" }) {
+function PlatformBadge({ platform }: { platform: "meta" | "google" }) {
+  const isMeta = platform === "meta"
   return (
     <span
-      className={`inline-flex items-center gap-1 text-[11px] font-medium ${
-        platform === "meta" ? "text-info" : "text-chart-2"
+      className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+        isMeta
+          ? "bg-[#1877f2]/10 text-[#1877f2]"
+          : "bg-[#34a853]/10 text-[#34a853]"
       }`}
     >
       <span
         className={`size-1.5 rounded-full ${
-          platform === "meta" ? "bg-info" : "bg-chart-2"
+          isMeta ? "bg-[#1877f2]" : "bg-[#34a853]"
         }`}
       />
-      {platform === "meta" ? "Meta" : "Google"}
+      {isMeta ? "Meta" : "Google"}
     </span>
+  )
+}
+
+function PriorityDot({ priority }: { priority: Campaign["priority"] }) {
+  const colors = {
+    alta: "bg-[#ff6b6b]",
+    media: "bg-[#fab005]",
+    baixa: "bg-[#868e96]",
+  }
+  return (
+    <span
+      className={`size-1.5 rounded-full ${colors[priority]}`}
+      title={`Prioridade ${priority}`}
+    />
   )
 }
 
@@ -51,17 +68,20 @@ function CampaignCard({
       onDragStart={(e) => onDragStart(e, campaign.id)}
       className="group cursor-grab active:cursor-grabbing"
     >
-      <div className="rounded-lg border border-border bg-card p-3 shadow-[0_1px_2px_0_rgba(0,0,0,0.03)] hover:shadow-[0_1px_4px_0_rgba(0,0,0,0.06)] transition-shadow">
-        <div className="flex flex-col gap-2.5">
+      <div className="rounded-xl border border-border bg-card p-3.5 shadow-sm hover:shadow-md hover:border-primary/20 transition-all">
+        <div className="flex flex-col gap-3">
           <div className="flex items-start justify-between gap-1.5">
-            <p className="text-[13px] font-medium leading-snug text-foreground">
-              {campaign.title}
-            </p>
+            <div className="flex items-center gap-1.5">
+              <PriorityDot priority={campaign.priority} />
+              <p className="text-[13px] font-semibold leading-snug text-card-foreground">
+                {campaign.title}
+              </p>
+            </div>
             <GripVertical className="size-3.5 text-muted-foreground/30 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-0.5" />
           </div>
-          <PlatformDot platform={campaign.platform} />
+          <PlatformBadge platform={campaign.platform} />
           <div className="flex items-center justify-between text-muted-foreground">
-            <span className="flex items-center gap-1 text-[11px]">
+            <span className="flex items-center gap-1 text-[11px] font-medium">
               <DollarSign className="size-3" />
               {campaign.budget}
             </span>
@@ -79,7 +99,7 @@ function CampaignCard({
 function PhaseColumn({
   phase,
   campaigns,
-  accentColor,
+  colors,
   isOver,
   onDragOver,
   onDragLeave,
@@ -88,7 +108,7 @@ function PhaseColumn({
 }: {
   phase: (typeof kanbanPhases)[number]
   campaigns: Campaign[]
-  accentColor: string
+  colors: (typeof phaseColors)[KanbanPhaseId]
   isOver: boolean
   onDragOver: (e: React.DragEvent) => void
   onDragLeave: () => void
@@ -97,23 +117,27 @@ function PhaseColumn({
 }) {
   return (
     <div
-      className={`flex flex-col w-[240px] shrink-0 rounded-xl transition-colors ${
-        isOver ? "bg-primary/[0.03] ring-1 ring-primary/10" : "bg-muted/50"
-      }`}
+      className={`flex flex-col w-[260px] shrink-0 rounded-2xl overflow-hidden transition-all border ${
+        isOver ? "border-primary/30 shadow-lg shadow-primary/5" : "border-border"
+      } bg-card`}
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
       onDrop={onDrop}
     >
-      <div className="flex items-center gap-2 px-3 py-3">
-        <span className={`size-2 rounded-full ${accentColor}`} />
-        <span className="text-xs font-semibold text-foreground tracking-wide">
+      {/* Colored top bar */}
+      <div className={`h-1.5 ${colors.top}`} />
+      
+      <div className="flex items-center gap-2 px-4 py-3">
+        <span className={`size-2.5 rounded-full ${colors.dot}`} />
+        <span className="text-sm font-semibold text-card-foreground">
           {phase.label}
         </span>
-        <span className="ml-auto text-[11px] font-medium text-muted-foreground tabular-nums">
+        <span className={`ml-auto text-[11px] font-bold rounded-full px-2 py-0.5 ${colors.count}`}>
           {campaigns.length}
         </span>
       </div>
-      <div className="flex flex-col gap-2 px-2 pb-3 min-h-[140px]">
+
+      <div className="flex flex-col gap-2.5 px-3 pb-3 min-h-[140px]">
         {campaigns.map((campaign) => (
           <CampaignCard
             key={campaign.id}
@@ -121,6 +145,10 @@ function PhaseColumn({
             onDragStart={onCardDragStart}
           />
         ))}
+        <button className="flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-border py-2.5 text-xs text-muted-foreground hover:border-primary/30 hover:text-primary hover:bg-primary/5 transition-colors">
+          <Plus className="size-3.5" />
+          Adicionar
+        </button>
       </div>
     </div>
   )
@@ -172,24 +200,24 @@ export function KanbanTab() {
     <section className="flex flex-col gap-5" aria-label="Pipeline Kanban">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-base font-semibold text-foreground">Pipeline de Campanhas</h2>
+          <h2 className="text-lg font-bold text-foreground">Pipeline de Campanhas</h2>
           <p className="text-sm text-muted-foreground mt-0.5">
             Arraste os cards entre colunas para atualizar o status
           </p>
         </div>
-        <Badge variant="secondary" className="text-xs font-medium tabular-nums">
+        <Badge className="bg-primary/10 text-primary border-0 text-sm font-bold tabular-nums px-3 py-1 hover:bg-primary/10">
           {totalCampaigns} campanhas
         </Badge>
       </div>
 
       <ScrollArea className="w-full">
-        <div className="flex gap-3 pb-4" style={{ minWidth: "fit-content" }}>
+        <div className="flex gap-4 pb-4" style={{ minWidth: "fit-content" }}>
           {kanbanPhases.map((phase) => (
             <PhaseColumn
               key={phase.id}
               phase={phase}
               campaigns={campaigns[phase.id]}
-              accentColor={phaseAccents[phase.id]}
+              colors={phaseColors[phase.id]}
               isOver={dragOverPhase === phase.id}
               onDragOver={(e) => handleDragOver(e, phase.id)}
               onDragLeave={() => setDragOverPhase(null)}
