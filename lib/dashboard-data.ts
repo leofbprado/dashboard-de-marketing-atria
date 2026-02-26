@@ -11,6 +11,11 @@ export interface Campaign {
   pillar: string // Segurança, Tempo, Preço etc
   progress: { current: number; total: number } // 3/5
   metrics?: { impressions: string; cpl: string } // quando publicado
+  // campos extras usados em componentes, mas não obrigatórios nas demos
+  tags?: string[]
+  pipeline?: { role: string; title: string; done: boolean }[]
+  dueDate?: string
+  priority?: "alta" | "media" | "baixa"
 }
 
 export interface KpiCard {
@@ -221,11 +226,11 @@ export const initialCampaigns: Record<KanbanPhaseId, Campaign[]> = {
 
 // ─── KPI Demo Data ──────────────────────────────────────
 export const topKpiCards = [
-  { label: "Gasto Total", value: "R$ 146.800", change: 8.5, trend: "up" as const },
-  { label: "Conversas (WhatsApp)", value: "2.139", change: 15.2, trend: "up" as const },
-  { label: "CPL Medio", value: "R$ 68,60", change: -5.1, trend: "down" as const },
-  { label: "Campanhas (total)", value: "24", change: 12.0, trend: "up" as const },
-  { label: "Quarentena (ativo)", value: "2/4", change: 0, trend: "neutral" as const },
+  { label: "Gasto Total", value: "R$ 146.800", change: 8.5, trend: "up" as const, platform: "meta" },
+  { label: "Conversas (WhatsApp)", value: "2.139", change: 15.2, trend: "up" as const, platform: "meta" },
+  { label: "CPL Medio", value: "R$ 68,60", change: -5.1, trend: "down" as const, platform: "google" },
+  { label: "Campanhas (total)", value: "24", change: 12.0, trend: "up" as const, platform: "meta" },
+  { label: "Quarentena (ativo)", value: "2/4", change: 0, trend: "neutral" as const, platform: "google" },
 ]
 
 export interface CampaignAnalysis {

@@ -13,13 +13,11 @@ import { Calendar, DollarSign, GripVertical, Plus } from "lucide-react"
 import { CampaignDetailModal } from "./campaign-detail-modal"
 
 const phaseColors: Record<KanbanPhaseId, { top: string; dot: string; bg: string; count: string }> = {
-  briefing:      { top: "bg-[#868e96]", dot: "bg-[#868e96]", bg: "bg-[#868e96]/5",  count: "bg-[#868e96]/10 text-[#868e96]" },
-  criativo:      { top: "bg-[#4c6ef5]", dot: "bg-[#4c6ef5]", bg: "bg-[#4c6ef5]/5",  count: "bg-[#4c6ef5]/10 text-[#4c6ef5]" },
-  producao:      { top: "bg-[#7950f2]", dot: "bg-[#7950f2]", bg: "bg-[#7950f2]/5",  count: "bg-[#7950f2]/10 text-[#7950f2]" },
-  publicacao:    { top: "bg-[#1098ad]", dot: "bg-[#1098ad]", bg: "bg-[#1098ad]/5",  count: "bg-[#1098ad]/10 text-[#1098ad]" },
-  monitor48h:    { top: "bg-[#f76707]", dot: "bg-[#f76707]", bg: "bg-[#f76707]/5",  count: "bg-[#f76707]/10 text-[#f76707]" },
-  decisao:       { top: "bg-[#fab005]", dot: "bg-[#fab005]", bg: "bg-[#fab005]/5",  count: "bg-[#fab005]/10 text-[#fab005]" },
-  concluido:     { top: "bg-[#12b886]", dot: "bg-[#12b886]", bg: "bg-[#12b886]/5",  count: "bg-[#12b886]/10 text-[#12b886]" },
+  briefing:   { top: "bg-[#868e96]", dot: "bg-[#868e96]", bg: "bg-[#868e96]/5", count: "bg-[#868e96]/10 text-[#868e96]" },
+  criativo:   { top: "bg-[#4c6ef5]", dot: "bg-[#4c6ef5]", bg: "bg-[#4c6ef5]/5", count: "bg-[#4c6ef5]/10 text-[#4c6ef5]" },
+  aprovacao:  { top: "bg-[#7950f2]", dot: "bg-[#7950f2]", bg: "bg-[#7950f2]/5", count: "bg-[#7950f2]/10 text-[#7950f2]" },
+  publicado:  { top: "bg-[#1098ad]", dot: "bg-[#1098ad]", bg: "bg-[#1098ad]/5", count: "bg-[#1098ad]/10 text-[#1098ad]" },
+  monitor:    { top: "bg-[#f76707]", dot: "bg-[#f76707]", bg: "bg-[#f76707]/5", count: "bg-[#f76707]/10 text-[#f76707]" },
 }
 
 function PlatformBadge({ platform }: { platform: Campaign["platform"] }) {
@@ -56,7 +54,7 @@ function PlatformBadge({ platform }: { platform: Campaign["platform"] }) {
   )
 }
 
-function PriorityDot({ priority }: { priority: Campaign["priority"] }) {
+function PriorityDot({ priority }: { priority?: Campaign["priority"] }) {
   const colors = {
     alta: "bg-[#ff6b6b]",
     media: "bg-[#fab005]",
@@ -100,7 +98,7 @@ function CampaignCard({
 
           <div className="flex items-center gap-1.5 flex-wrap">
             <PlatformBadge platform={campaign.platform} />
-            {campaign.tags.map((tag) => (
+            {(campaign.tags || []).map((tag) => (
               <span
                 key={tag}
                 className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground"
@@ -112,7 +110,7 @@ function CampaignCard({
 
           {/* Pipeline progress mini bar */}
           <div className="flex items-center gap-1">
-            {campaign.pipeline.map((step, i) => (
+            {(campaign.pipeline || []).map((step, i) => (
               <div
                 key={i}
                 className={`h-1 flex-1 rounded-full ${
@@ -127,10 +125,12 @@ function CampaignCard({
               <DollarSign className="size-3" />
               {campaign.budget}
             </span>
-            <span className="flex items-center gap-1 text-[11px]">
-              <Calendar className="size-3" />
-              {campaign.dueDate}
-            </span>
+            {campaign.dueDate && (
+              <span className="flex items-center gap-1 text-[11px]">
+                <Calendar className="size-3" />
+                {campaign.dueDate}
+              </span>
+            )}
           </div>
         </div>
       </div>

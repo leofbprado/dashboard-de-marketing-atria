@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { metaKpis, googleKpis, type KpiCard } from "@/lib/dashboard-data"
+import { topKpiCards, type KpiCard } from "@/lib/dashboard-data"
 import { ArrowUpRight, ArrowDownRight, DollarSign, Users, BarChart3, TrendingUp } from "lucide-react"
 
 function TrendBadge({ trend, change }: { trend: KpiCard["trend"]; change: number }) {
@@ -112,6 +112,10 @@ function PlatformSection({
 
 export function KpisTab() {
   const [filter, setFilter] = useState<"all" | "meta" | "google">("all")
+
+  // derive platform-specific lists from central data
+  const metaKpis = topKpiCards.filter((k) => k.platform === "meta")
+  const googleKpis = topKpiCards.filter((k) => k.platform === "google")
 
   const filterOptions = [
     { key: "all" as const, label: "Todas", color: "" },

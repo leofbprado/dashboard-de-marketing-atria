@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator"
 import {
   type Campaign,
   type KanbanPhaseId,
-  moveToOptions,
+  kanbanPhases,
 } from "@/lib/dashboard-data"
 import {
   CheckCircle2,
@@ -115,25 +115,25 @@ export function CampaignDetailModal({
                 Mover para:
               </p>
               <div className="flex flex-wrap gap-1.5">
-                {moveToOptions
-                  .filter((opt) => opt.id !== currentPhase)
-                  .map((opt) => (
+                {kanbanPhases
+                  .filter((p) => p.id !== currentPhase)
+                  .map((p) => (
                     <button
-                      key={opt.id}
+                      key={p.id}
                       onClick={() => {
-                        onMoveTo(campaign.id, currentPhase, opt.id)
+                        onMoveTo(campaign.id, currentPhase, p.id)
                         onOpenChange(false)
                       }}
                       className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-[12px] font-semibold text-foreground hover:border-[var(--btn-color)]/40 hover:bg-[var(--btn-color)]/5 transition-colors cursor-pointer"
                       style={
-                        { "--btn-color": opt.color } as React.CSSProperties
+                        { "--btn-color": p.color } as React.CSSProperties
                       }
                     >
                       <span
                         className="size-2 rounded-full"
-                        style={{ backgroundColor: opt.color }}
+                        style={{ backgroundColor: p.color }}
                       />
-                      {opt.label}
+                      {p.label}
                     </button>
                   ))}
               </div>
@@ -147,7 +147,7 @@ export function CampaignDetailModal({
                 Pipeline
               </p>
               <div className="flex flex-col gap-4">
-                {campaign.pipeline.map((step, idx) => {
+                {(campaign.pipeline || []).map((step, idx) => {
                   const config = roleConfig[step.role] || {
                     icon: Circle,
                     color: "#868e96",
