@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { topKpiCards, type KpiCard } from "@/lib/dashboard-data"
+import { topKpiCards, type KpiCard, diagnosticData } from "@/lib/dashboard-data"
 import { ArrowUpRight, ArrowDownRight, DollarSign, Users, BarChart3, TrendingUp } from "lucide-react"
 
 function TrendBadge({ trend, change }: { trend: KpiCard["trend"]; change: number }) {
@@ -38,6 +38,17 @@ function MetricCard({ kpi }: { kpi: KpiCard }) {
         <span className="text-2xl font-bold text-card-foreground tracking-tight tabular-nums">
           {kpi.value}
         </span>
+        {/* sparkline placeholder */}
+        <div className="mt-1">
+          <svg width="40" height="12" className="block">
+            <polyline
+              points="0,8 10,4 20,6 30,3 40,5"
+              stroke="#888"
+              fill="none"
+              strokeWidth="1"
+            />
+          </svg>
+        </div>
         <span className="text-[11px] text-muted-foreground leading-tight">
           {kpi.description}
         </span>
@@ -125,6 +136,38 @@ export function KpisTab() {
 
   return (
     <section className="flex flex-col gap-6" aria-label="KPIs de Performance">
+      {/* alerts bar */}
+      <div className="flex flex-wrap gap-2">
+        {(() => {
+          const alerts: { text: string; color: string }[] = []
+          const {
+            freq_meta,
+            freq_google,
+            cpl_meta,
+            cpl_google,
+            roas_meta,
+            roas_google,
+            thresholds,
+          } = diagnosticData
+          if (freq_meta > thresholds.freq_limit || freq_google > thresholds.freq_limit) {
+            alerts.push({ text: "FADIGA CRIATIVA", color: "bg-red-600 text-white" })
+          }
+          if (cpl_meta > thresholds.cpl_limit || cpl_google > thresholds.cpl_limit) {
+            alerts.push({ text: "CPL ALTO", color: "bg-orange-500 text-white" })
+          }
+          if (roas_meta < thresholds.roas_limit || roas_google < thresholds.roas_limit) {
+            alerts.push({ text: "ROAS BAIXO", color: "bg-red-600 text-white" })
+          }
+          return alerts.map((a, i) => (
+            <span
+              key={i}
+              className={`${a.color} px-3 py-1 rounded-full text-xs font-bold`}
+            >
+              {a.text}
+            </span>
+          ))
+        })()}
+      </div>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-lg font-bold text-foreground">Metricas de Performance</h2>
@@ -184,6 +227,46 @@ export function KpisTab() {
       </div>
 
       {/* Platform sections */}
+      {/* Diagnóstico abaixo dos KPI cards */}
+      <div className="mt-6 p-4 bg-card border border-border rounded-lg">
+        <h3 className="text-base font-semibold">Diagnóstico</h3>
+        <ul className="list-disc ml-5 mt-2 space-y-1 text-sm">
+          {(() => {
+            const notes: string[] = []
+            const {
+              freq_meta,
+              freq_google,
+              cpl_meta,
+              cpl_google,
+              roas_meta,
+              roas_google,
+              thresholds,
+            } = diagnosticData
+            if (cpl_meta > thresholds.cpl_limit)
+              notes.push(
+                `CPL Meta está alto (${cpl_meta}), possivelmente por frequência elevada (${freq_meta}).`
+              )
+            if (cpl_google > thresholds.cpl_limit)
+              notes.push(
+                `CPL Google está alto (${cpl_google}), verificar criativos.`
+              )
+            if (freq_meta > thresholds.freq_limit)
+              notes.push(
+                `Frequência Meta acima do limite (${freq_meta}), cuidado com fadiga criativa.`
+              )
+            if (roas_meta < thresholds.roas_limit)
+              notes.push(
+                `ROAS Meta baixo (${roas_meta}), reavalie estratégias de lance.`
+              )
+            if (roas_google < thresholds.roas_limit)
+              notes.push(
+                `ROAS Google baixo (${roas_google}), ajustar orçamento.`
+              )
+            if (notes.length === 0) notes.push("Nenhum problema identificado.")
+            return notes.map((n, idx) => <li key={idx}>{n}</li>)
+          })()}
+        </ul>
+      </div>
       <div className="flex flex-col gap-8">
         {(filter === "all" || filter === "meta") && (
           <PlatformSection

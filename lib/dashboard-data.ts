@@ -307,6 +307,21 @@ export const topKpiCards = [
   { label: "Quarentena (ativo)", value: "2/4", change: 0, trend: "neutral" as const, platform: "google" },
 ]
 
+// dados usados na aba de KPIs para diagnóstico e limites
+export const diagnosticData = {
+  freq_meta: 4.2,
+  freq_google: 2.8,
+  cpl_meta: 12.5,
+  cpl_google: 8.3,
+  roas_meta: 3.2,
+  roas_google: 5.1,
+  thresholds: {
+    freq_limit: 3,
+    cpl_limit: 10,
+    roas_limit: 2,
+  },
+}
+
 export interface CampaignAnalysis {
   campaign: string
   gasto: string
