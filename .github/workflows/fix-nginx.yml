@@ -22,16 +22,18 @@ jobs:
           username: ${{ secrets.HETZNER_USER }}
           key: ${{ secrets.HETZNER_SSH_KEY }}
           script: |
-            echo '=== Removing ALL nginx site configs ==='
-            sudo mkdir -p /etc/nginx/backup-v3
-            sudo cp -r /etc/nginx/sites-enabled/* /etc/nginx/backup-v3/ 2>/dev/null || true
-            sudo cp -r /etc/nginx/conf.d/* /etc/nginx/backup-v3/ 2>/dev/null || true
-            sudo cp -r /etc/nginx/sites-available/* /etc/nginx/backup-v3/ 2>/dev/null || true
+            echo '=== Kill all nginx processes ==='
+            sudo killall -9 nginx 2>/dev/null || true
+            sleep 2
+            echo '=== Check ports 80 and 443 ==='
+            sudo ss -tlnp | grep -E ':80|:443' || echo 'Ports free'
+            
+            echo '=== Clean ALL nginx configs ==='
             sudo rm -f /etc/nginx/sites-enabled/*
             sudo rm -f /etc/nginx/conf.d/*.conf
             sudo rm -f /etc/nginx/sites-available/*
             
-            echo '=== Writing clean proxy config ==='
+            echo '=== Write proxy config ==='
             cat << 'NGINXEOF' | sudo tee /etc/nginx/sites-enabled/marketing
             server {
                 listen 80;
@@ -59,22 +61,16 @@ jobs:
             }
             NGINXEOF
             
-            echo '=== Test nginx config ==='
+            echo '=== Test config ==='
             sudo nginx -t 2>&1
             
-            echo '=== Full restart nginx ==='
-            sudo systemctl stop nginx
-            sleep 2
+            echo '=== Start nginx ==='
             sudo systemctl start nginx
             sudo systemctl status nginx --no-pager
             
-            echo '=== Verify: curl localhost:3000 ==='
-            curl -sI http://localhost:3000 | head -5
-            
-            echo '=== Verify: curl domain ==='
+            echo '=== Verify curl domain ==='
+            sleep 2
             curl -skI https://marketing.atriaveiculos.com.br | head -10
-            
-            echo '=== Verify: nginx -T server blocks ==='
-            nginx -T 2>&1 | grep -B1 -A5 'server_name\|root \|proxy_pass'
+            curl -sk https://marketing.atriaveiculos.com.br | head -20
             
             echo 'DONE'
