@@ -22,36 +22,29 @@ jobs:
           username: ${{ secrets.HETZNER_USER }}
           key: ${{ secrets.HETZNER_SSH_KEY }}
           script: |
-            echo '=== List all nginx configs ==='
-            ls -la /etc/nginx/sites-enabled/
-            ls -la /etc/nginx/conf.d/
-            
-            # Remove ALL configs in sites-enabled (backup first)
-            sudo mkdir -p /etc/nginx/backup-configs
-            sudo cp /etc/nginx/sites-enabled/* /etc/nginx/backup-configs/ 2>/dev/null || true
+            echo '=== Removing ALL nginx site configs ==='
+            sudo mkdir -p /etc/nginx/backup-v3
+            sudo cp -r /etc/nginx/sites-enabled/* /etc/nginx/backup-v3/ 2>/dev/null || true
+            sudo cp -r /etc/nginx/conf.d/* /etc/nginx/backup-v3/ 2>/dev/null || true
+            sudo cp -r /etc/nginx/sites-available/* /etc/nginx/backup-v3/ 2>/dev/null || true
             sudo rm -f /etc/nginx/sites-enabled/*
-            
-            # Also check and clean conf.d
-            sudo cp /etc/nginx/conf.d/* /etc/nginx/backup-configs/ 2>/dev/null || true
             sudo rm -f /etc/nginx/conf.d/*.conf
+            sudo rm -f /etc/nginx/sites-available/*
             
-            # Write single clean config
-            sudo tee /etc/nginx/sites-enabled/marketing > /dev/null << 'NGINXEOF'
+            echo '=== Writing clean proxy config ==='
+            cat << 'NGINXEOF' | sudo tee /etc/nginx/sites-enabled/marketing
             server {
                 listen 80;
                 server_name marketing.atriaveiculos.com.br;
                 return 301 https://$host$request_uri;
             }
-
             server {
                 listen 443 ssl;
                 server_name marketing.atriaveiculos.com.br;
-
                 ssl_certificate /etc/letsencrypt/live/marketing.atriaveiculos.com.br/fullchain.pem;
                 ssl_certificate_key /etc/letsencrypt/live/marketing.atriaveiculos.com.br/privkey.pem;
                 include /etc/letsencrypt/options-ssl-nginx.conf;
                 ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
-
                 location / {
                     proxy_pass http://127.0.0.1:3000;
                     proxy_http_version 1.1;
@@ -66,11 +59,22 @@ jobs:
             }
             NGINXEOF
             
-            echo '=== New config ==='
-            ls -la /etc/nginx/sites-enabled/
-            cat /etc/nginx/sites-enabled/marketing
-            
-            # Test and reload
+            echo '=== Test nginx config ==='
             sudo nginx -t 2>&1
-            sudo systemctl reload nginx
-            echo 'Done - Nginx reloaded'
+            
+            echo '=== Full restart nginx ==='
+            sudo systemctl stop nginx
+            sleep 2
+            sudo systemctl start nginx
+            sudo systemctl status nginx --no-pager
+            
+            echo '=== Verify: curl localhost:3000 ==='
+            curl -sI http://localhost:3000 | head -5
+            
+            echo '=== Verify: curl domain ==='
+            curl -skI https://marketing.atriaveiculos.com.br | head -10
+            
+            echo '=== Verify: nginx -T server blocks ==='
+            nginx -T 2>&1 | grep -B1 -A5 'server_name\|root \|proxy_pass'
+            
+            echo 'DONE'
