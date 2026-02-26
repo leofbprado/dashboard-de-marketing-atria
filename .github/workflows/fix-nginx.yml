@@ -22,10 +22,18 @@ jobs:
           username: ${{ secrets.HETZNER_USER }}
           key: ${{ secrets.HETZNER_SSH_KEY }}
           script: |
+            echo '=== Stop nginx and free ports ==='
+            sudo systemctl stop nginx 2>&1 || true
+            sudo killall nginx 2>&1 || true
+            sudo fuser -k 80/tcp 2>&1 || true
+            sudo fuser -k 443/tcp 2>&1 || true
+            sleep 2
+
             echo '=== Clean configs ==='
             sudo rm -f /etc/nginx/sites-enabled/*
             sudo rm -f /etc/nginx/conf.d/*.conf
             sudo rm -f /etc/nginx/sites-available/*
+
             echo '=== Write proxy config ==='
             sudo tee /etc/nginx/sites-enabled/marketing > /dev/null << 'NGINXEOF'
             server {
@@ -53,12 +61,15 @@ jobs:
                 }
             }
             NGINXEOF
+
             echo '=== Test config ==='
             sudo nginx -t 2>&1
-            echo '=== Restart nginx ==='
-            sudo systemctl restart nginx 2>&1 || sudo systemctl start nginx 2>&1
+
+            echo '=== Start nginx ==='
+            sudo systemctl start nginx 2>&1
             sleep 2
             sudo systemctl status nginx --no-pager
+
             echo '=== Verify ==='
             curl -skI https://marketing.atriaveiculos.com.br | head -5
             echo 'DONE'
