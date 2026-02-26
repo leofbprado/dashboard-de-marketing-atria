@@ -27,7 +27,11 @@ function ToggleRow({
   toggle: SettingToggle
   onToggle: (id: string) => void
 }) {
-  const config = categoryConfig[toggle.category]
+  const config = categoryConfig[(toggle as any).category] ?? {
+    icon: Zap,
+    color: "text-[#4c6ef5]",
+    bg: "bg-[#4c6ef5]/10",
+  }
   const Icon = config.icon
   return (
     <div className="flex items-start gap-3 py-4 first:pt-0 last:pb-0 border-b border-border last:border-0">
@@ -67,6 +71,11 @@ function LimitRow({
       ? `R$ ${limit.value.toLocaleString("pt-BR")}`
       : `${limit.value}${limit.unit}`
 
+  // some limits may not define min/step in the simplified data; fallback safely
+  const min = (limit as any).min ?? 0
+  const max = limit.max ?? Math.max(limit.value, min)
+  const step = (limit as any).step ?? 1
+
   return (
     <div className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 border-b border-border last:border-0">
       <div className="flex items-center justify-between">
@@ -79,22 +88,22 @@ function LimitRow({
       </div>
       <Slider
         value={[limit.value]}
-        min={limit.min}
-        max={limit.max}
-        step={limit.step}
+        min={min}
+        max={max}
+        step={step}
         onValueChange={([val]) => onChange(limit.id, val)}
         className="w-full"
       />
       <div className="flex justify-between text-[10px] text-muted-foreground font-medium tabular-nums">
         <span>
           {limit.unit === "R$"
-            ? `R$ ${limit.min.toLocaleString("pt-BR")}`
-            : `${limit.min}${limit.unit}`}
+            ? `R$ ${min.toLocaleString("pt-BR")}`
+            : `${min}${limit.unit}`}
         </span>
         <span>
           {limit.unit === "R$"
-            ? `R$ ${limit.max.toLocaleString("pt-BR")}`
-            : `${limit.max}${limit.unit}`}
+            ? `R$ ${max.toLocaleString("pt-BR")}`
+            : `${max}${limit.unit}`}
         </span>
       </div>
     </div>
