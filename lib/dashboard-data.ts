@@ -50,6 +50,80 @@ export interface SecurityItem {
   category: "hetzner" | "meta-ads" | "google-ads" | "lp-openclaw"
 }
 
+// checklist com categorias para a aba de Segurança
+export interface ChecklistItem {
+  id: string
+  label: string
+  checked?: boolean
+}
+
+export interface ChecklistCategory {
+  id: string
+  name: string
+  items: ChecklistItem[]
+}
+
+export const securityChecklist: ChecklistCategory[] = [
+  {
+    id: "hetzner",
+    name: "Hetzner",
+    items: [
+      { id: "hetzner-ssl", label: "SSL ativo" },
+      { id: "hetzner-firewall", label: "Firewall configurado" },
+      { id: "hetzner-backup", label: "Backup automático" },
+      { id: "hetzner-monitoring", label: "Monitoring ativo" },
+      { id: "hetzner-docker", label: "Docker atualizado" },
+      { id: "hetzner-nginx", label: "Nginx hardened" },
+      { id: "hetzner-fail2ban", label: "Fail2ban ativo" },
+      { id: "hetzner-sshkey", label: "SSH key only" },
+    ],
+  },
+  {
+    id: "meta",
+    name: "Meta",
+    items: [
+      { id: "meta-bm", label: "Business Manager verificado" },
+      { id: "meta-pixel", label: "Pixel instalado" },
+      { id: "meta-capi", label: "CAPI configurada" },
+      { id: "meta-lookalike", label: "Público lookalike criado" },
+      { id: "meta-catalog", label: "Catálogo sincronizado" },
+      { id: "meta-billing", label: "Billing ativo" },
+      { id: "meta-2fa", label: "2FA ativado" },
+      { id: "meta-domain", label: "Domain verified" },
+    ],
+  },
+  {
+    id: "google",
+    name: "Google",
+    items: [
+      { id: "google-merchant", label: "Merchant Center ativo" },
+      { id: "google-conversoes", label: "Conversões configuradas" },
+      { id: "google-remarketing", label: "Remarketing tag instalada" },
+      { id: "google-bid", label: "Bid strategy otimizada" },
+      { id: "google-negatives", label: "Negative keywords atualizadas" },
+      { id: "google-extensions", label: "Extensions configuradas" },
+      { id: "google-quality", label: "Quality Score >7" },
+      { id: "google-budget-alerts", label: "Budget alerts ativos" },
+    ],
+  },
+  {
+    id: "lp",
+    name: "LP",
+    items: [
+      { id: "lp-pagespeed", label: "PageSpeed >90" },
+      { id: "lp-mobile", label: "Mobile responsive" },
+      { id: "lp-form", label: "Form funcionando" },
+      { id: "lp-utm", label: "UTM tracking ativo" },
+      { id: "lp-hotjar", label: "Hotjar instalado" },
+      { id: "lp-abtest", label: "A/B test rodando" },
+      { id: "lp-ssl", label: "SSL certificado" },
+      { id: "lp-thankyou", label: "Thank you page configurada" },
+      { id: "lp-whatsapp", label: "WhatsApp widget ativo" },
+      { id: "lp-cta", label: "CTA above the fold" },
+    ],
+  },
+]
+
 // parâmetros específicos de configuração do motor de consignaçãp
 export interface MotorConfig {
   ALLOW_AUTO_CREATE: boolean

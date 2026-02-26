@@ -1,6 +1,7 @@
 "use client"
 
 import { Badge } from "@/components/ui/badge"
+import { topKpiCards } from "@/lib/dashboard-data"
 import { Car, Bell } from "lucide-react"
 
 export function DashboardHeader() {
@@ -39,6 +40,11 @@ export function DashboardHeader() {
               <span className="relative inline-flex size-2 rounded-full bg-[#51cf66]" />
             </span>
             <span className="text-xs text-[#ffffff] font-medium">Online</span>
+          </div>
+          <div className="flex items-center gap-1.5 bg-[#ffffff]/15 backdrop-blur-sm rounded-full px-3 py-1.5">
+            <span className="text-xs text-[#ffffff] font-medium">
+              QUARENTENA {topKpiCards.find((k) => k.label.includes("Quarentena"))?.value || "-"}
+            </span>
           </div>
         </div>
       </div>
