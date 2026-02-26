@@ -22,25 +22,11 @@ jobs:
           username: ${{ secrets.HETZNER_USER }}
           key: ${{ secrets.HETZNER_SSH_KEY }}
           script: |
-            echo '=== Whats on port 443? ==='
-            sudo ss -tlnp | grep ':443' || echo 'nothing on 443'
-            sudo ss -tlnp | grep ':80' || echo 'nothing on 80'
-            echo '=== Stop nginx service ==='
-            sudo systemctl stop nginx 2>/dev/null || true
-            sleep 1
-            echo '=== Kill ANY process on ports ==='
-            sudo fuser -k 80/tcp 2>/dev/null || true
-            sudo fuser -k 443/tcp 2>/dev/null || true
-            sudo killall -9 nginx 2>/dev/null || true
-            sudo pkill -9 -f nginx 2>/dev/null || true
-            sleep 3
-            echo '=== Verify ports free ==='
-            sudo ss -tlnp | grep -E ':80|:443' || echo 'ALL PORTS FREE'
             echo '=== Clean configs ==='
             sudo rm -f /etc/nginx/sites-enabled/*
             sudo rm -f /etc/nginx/conf.d/*.conf
             sudo rm -f /etc/nginx/sites-available/*
-            echo '=== Write config ==='
+            echo '=== Write proxy config ==='
             sudo tee /etc/nginx/sites-enabled/marketing > /dev/null << 'NGINXEOF'
             server {
                 listen 80;
@@ -67,10 +53,12 @@ jobs:
                 }
             }
             NGINXEOF
+            echo '=== Test config ==='
             sudo nginx -t 2>&1
-            sudo systemctl start nginx
+            echo '=== Restart nginx ==='
+            sudo systemctl restart nginx 2>&1 || sudo systemctl start nginx 2>&1
             sleep 2
             sudo systemctl status nginx --no-pager
-            echo '=== Test ==='
+            echo '=== Verify ==='
             curl -skI https://marketing.atriaveiculos.com.br | head -5
             echo 'DONE'
