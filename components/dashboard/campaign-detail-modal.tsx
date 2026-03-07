@@ -109,6 +109,35 @@ export function CampaignDetailModal({
 
         <ScrollArea className="max-h-[60vh]">
           <div className="px-6 pb-6">
+            {/* Metric boxes — CPC/Cliques para tráfego, CPL/Leads para consignação */}
+            {campaign.type === "trafego" ? (
+              <div className="grid grid-cols-4 gap-2 py-4">
+                {[
+                  { label: "CPC", value: campaign.cpc ?? "—" },
+                  { label: "CPC 7d", value: campaign.cpc7d ?? "—" },
+                  { label: "Cliques", value: campaign.clicks != null ? campaign.clicks.toLocaleString("pt-BR") : "—" },
+                  { label: "Cliques 7d", value: campaign.clicks7d != null ? campaign.clicks7d.toLocaleString("pt-BR") : "—" },
+                ].map((m) => (
+                  <div key={m.label} className="flex flex-col items-center rounded-lg bg-muted/50 px-2 py-2.5 text-center">
+                    <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">{m.label}</span>
+                    <span className="mt-1 text-[15px] font-bold text-foreground tabular-nums">{m.value}</span>
+                  </div>
+                ))}
+              </div>
+            ) : campaign.metrics ? (
+              <div className="grid grid-cols-2 gap-2 py-4">
+                {[
+                  { label: "Impressões", value: campaign.metrics.impressions },
+                  { label: "CPL", value: campaign.metrics.cpl },
+                ].map((m) => (
+                  <div key={m.label} className="flex flex-col items-center rounded-lg bg-muted/50 px-2 py-2.5 text-center">
+                    <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">{m.label}</span>
+                    <span className="mt-1 text-[15px] font-bold text-foreground tabular-nums">{m.value}</span>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+
             {/* Move to section */}
             <div className="py-4">
               <p className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase mb-2.5">

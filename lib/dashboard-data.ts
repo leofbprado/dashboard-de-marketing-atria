@@ -2,6 +2,7 @@
 export interface Campaign {
   id: string
   title: string
+  type?: "trafego" | "consignacao"
   platform: "meta" | "google" | "meta+google"
   budget: string
   status: "ACTIVE" | "PAUSED"
@@ -10,7 +11,13 @@ export interface Campaign {
   hook: string
   pillar: string // Segurança, Tempo, Preço etc
   progress: { current: number; total: number } // 3/5
-  metrics?: { impressions: string; cpl: string } // quando publicado
+  metrics?: { impressions: string; cpl: string } // quando publicado (consignacao)
+  // campos de tráfego — retornados pela API /api/motor-kanban
+  cpc?: string
+  cpc7d?: string
+  clicks?: number
+  clicks7d?: number
+  thumbnailUrl?: string
   // campos extras usados em componentes, mas não obrigatórios nas demos
   tags?: string[]
   pipeline?: { role: string; title: string; done: boolean }[]
@@ -222,11 +229,12 @@ export const kanbanPhases = [
 export type KanbanPhaseId = (typeof kanbanPhases)[number]["id"]
 
 // ─── Kanban Demo Data ────────────────────────────────────
-// todas as campanhas agora são de consignação e usam apenas as três dores principais
+// mix de campanhas de consignação e tráfego
 export const initialCampaigns: Record<KanbanPhaseId, Campaign[]> = {
   briefing: [
     {
       id: "1",
+      type: "consignacao",
       title: "Consignação - Segurança: Evite golpes",
       platform: "meta",
       budget: "R$ 30",
@@ -236,39 +244,49 @@ export const initialCampaigns: Record<KanbanPhaseId, Campaign[]> = {
       hook: "Evite golpes Pix/cheque",
       pillar: "Segurança",
       progress: { current: 0, total: 5 },
+      thumbnailUrl: "https://placehold.co/320x180/1877f2/ffffff?text=Consig%2001",
     },
   ],
   criativo: [
     {
       id: "2",
-      title: "Consignação - Tempo: Venda sem estresse",
-      platform: "google",
-      budget: "R$ 30",
+      type: "trafego",
+      title: "Tráfego - Awareness: Conheça a Atria",
+      platform: "meta",
+      budget: "R$ 50",
       status: "ACTIVE",
       week: "SEM 12",
-      theme: "Tempo",
-      hook: "Menos desgaste vendendo sozinho",
-      pillar: "Tempo",
+      theme: "Awareness",
+      hook: "Descubra como funciona",
+      pillar: "Tráfego",
       progress: { current: 1, total: 5 },
+      cpc: "R$ 1,45",
+      cpc7d: "R$ 1,62",
+      clicks: 412,
+      clicks7d: 389,
+      thumbnailUrl: "https://placehold.co/320x180/e03131/ffffff?text=Traf%2001",
     },
   ],
   aprovacao: [
     {
       id: "3",
+      type: "consignacao",
       title: "Consignação - Preço: Proteja seu valor",
       platform: "meta+google",
       budget: "R$ 30",
-      status: "ENDED",
+      status: "PAUSED",
       week: "SEM 11",
       theme: "Preço",
       hook: "Sem medo de perder dinheiro",
       pillar: "Preço",
       progress: { current: 2, total: 5 },
+      thumbnailUrl: "https://placehold.co/320x180/1877f2/ffffff?text=Consig%2002",
     },
   ],
   publicado: [
     {
       id: "4",
+      type: "consignacao",
       title: "Consignação - Segurança: Tranquilidade total",
       platform: "meta",
       budget: "R$ 30",
@@ -279,11 +297,31 @@ export const initialCampaigns: Record<KanbanPhaseId, Campaign[]> = {
       pillar: "Segurança",
       progress: { current: 5, total: 5 },
       metrics: { impressions: "10K", cpl: "R$ 30,00" },
+      thumbnailUrl: "https://placehold.co/320x180/1877f2/ffffff?text=Consig%2003",
+    },
+    {
+      id: "6",
+      type: "trafego",
+      title: "Tráfego - Retargeting: Volte e compre",
+      platform: "meta",
+      budget: "R$ 40",
+      status: "ACTIVE",
+      week: "SEM 10",
+      theme: "Retargeting",
+      hook: "Você esqueceu de finalizar",
+      pillar: "Tráfego",
+      progress: { current: 5, total: 5 },
+      cpc: "R$ 0,98",
+      cpc7d: "R$ 1,10",
+      clicks: 875,
+      clicks7d: 820,
+      thumbnailUrl: "https://placehold.co/320x180/e03131/ffffff?text=Traf%2002",
     },
   ],
   monitor: [
     {
       id: "5",
+      type: "consignacao",
       title: "Consignação - Tempo: Rápido e seguro",
       platform: "google",
       budget: "R$ 30",
@@ -294,6 +332,7 @@ export const initialCampaigns: Record<KanbanPhaseId, Campaign[]> = {
       pillar: "Tempo",
       progress: { current: 5, total: 5 },
       metrics: { impressions: "8K", cpl: "R$ 25,00" },
+      thumbnailUrl: "https://placehold.co/320x180/34a853/ffffff?text=Consig%2004",
     },
   ],
 }
@@ -324,9 +363,10 @@ export const diagnosticData = {
 
 export interface CampaignAnalysis {
   campaign: string
+  type: "trafego" | "consignacao"
   gasto: string
-  conv: number
-  cpl: string
+  conv: number   // Leads (consignacao) ou Cliques (trafego)
+  cpl: string    // CPL (consignacao) ou CPC (trafego)
   alcance: string
   freq: number
   ctr: string
@@ -335,10 +375,12 @@ export interface CampaignAnalysis {
 }
 
 export const metaAdsAnalysis: CampaignAnalysis[] = [
-  { campaign: "Seguranca - Protecao Total", gasto: "R$ 15.000", conv: 124, cpl: "R$ 120,97", alcance: "45.2K", freq: 2.3, ctr: "2.1%", status: "Otimo", diagnostico: "Performance acima da media" },
-  { campaign: "Preco - Oferta Imperdivel", gasto: "R$ 22.000", conv: 89, cpl: "R$ 247,19", alcance: "78.5K", freq: 1.8, ctr: "1.8%", status: "Ruim", diagnostico: "CPL elevado, revisar criativos" },
-  { campaign: "Economia - Poupe Dinheiro", gasto: "R$ 25.000", conv: 247, cpl: "R$ 101,21", alcance: "92.1K", freq: 2.1, ctr: "2.5%", status: "Bom", diagnostico: "Alcance bom, otimizar para conversoes" },
-  { campaign: "Conforto - Dirija com Estilo", gasto: "R$ 18.000", conv: 156, cpl: "R$ 115,38", alcance: "67.8K", freq: 2.0, ctr: "2.3%", status: "Otimo", diagnostico: "Equilibrio perfeito" },
+  { campaign: "Seguranca - Protecao Total", type: "consignacao", gasto: "R$ 15.000", conv: 124, cpl: "R$ 120,97", alcance: "45.2K", freq: 2.3, ctr: "2.1%", status: "Otimo", diagnostico: "Performance acima da media" },
+  { campaign: "Preco - Oferta Imperdivel", type: "consignacao", gasto: "R$ 22.000", conv: 89, cpl: "R$ 247,19", alcance: "78.5K", freq: 1.8, ctr: "1.8%", status: "Ruim", diagnostico: "CPL elevado, revisar criativos" },
+  { campaign: "Trafego - Awareness Meta", type: "trafego", gasto: "R$ 18.500", conv: 3240, cpl: "R$ 5,71", alcance: "120.4K", freq: 1.4, ctr: "2.7%", status: "Otimo", diagnostico: "CPC baixo, escalar orcamento" },
+  { campaign: "Trafego - Retargeting Meta", type: "trafego", gasto: "R$ 9.800", conv: 1876, cpl: "R$ 5,22", alcance: "38.2K", freq: 3.1, ctr: "4.9%", status: "Bom", diagnostico: "Frequencia elevada, ampliar publico" },
+  { campaign: "Economia - Poupe Dinheiro", type: "consignacao", gasto: "R$ 25.000", conv: 247, cpl: "R$ 101,21", alcance: "92.1K", freq: 2.1, ctr: "2.5%", status: "Bom", diagnostico: "Alcance bom, otimizar para conversoes" },
+  { campaign: "Conforto - Dirija com Estilo", type: "consignacao", gasto: "R$ 18.000", conv: 156, cpl: "R$ 115,38", alcance: "67.8K", freq: 2.0, ctr: "2.3%", status: "Otimo", diagnostico: "Equilibrio perfeito" },
 ]
 
 // ─── Settings Demo Data ─────────────────────────────────

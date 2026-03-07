@@ -84,8 +84,21 @@ function CampaignCard({
       onClick={onClick}
       className="group cursor-pointer active:cursor-grabbing"
     >
-      <div className="rounded-xl border border-border bg-card p-3.5 shadow-sm hover:shadow-md hover:border-primary/20 transition-all">
-        <div className="flex flex-col gap-2.5">
+      <div className="rounded-xl border border-border bg-card shadow-sm hover:shadow-md hover:border-primary/20 transition-all overflow-hidden">
+        {/* Thumbnail */}
+        {campaign.thumbnailUrl ? (
+          <img
+            src={campaign.thumbnailUrl}
+            alt={campaign.title}
+            className="w-full h-[90px] object-cover"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none" }}
+          />
+        ) : (
+          <div className="w-full h-[90px] flex items-center justify-center bg-muted text-[11px] font-bold tracking-widest text-muted-foreground/40 uppercase">
+            {campaign.platform === "google" ? "GOOGLE" : "META"}
+          </div>
+        )}
+        <div className="p-3.5 flex flex-col gap-2.5">
           <div className="flex items-start justify-between gap-1.5">
             <div className="flex items-center gap-1.5">
               <PriorityDot priority={campaign.priority} />

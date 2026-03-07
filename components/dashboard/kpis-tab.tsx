@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { topKpiCards, type KpiCard, diagnosticData } from "@/lib/dashboard-data"
+import { topKpiCards, type KpiCard, diagnosticData, metaAdsAnalysis } from "@/lib/dashboard-data"
 import { ArrowUpRight, ArrowDownRight, DollarSign, Users, BarChart3, TrendingUp } from "lucide-react"
 
 function TrendBadge({ trend, change }: { trend: KpiCard["trend"]; change: number }) {
@@ -123,6 +123,7 @@ function PlatformSection({
 
 export function KpisTab() {
   const [filter, setFilter] = useState<"all" | "meta" | "google">("all")
+  const [tableType, setTableType] = useState<"consignacao" | "trafego">("consignacao")
 
   // derive platform-specific lists from central data
   const metaKpis = topKpiCards.filter((k) => k.platform === "meta")
@@ -284,6 +285,65 @@ export function KpisTab() {
             kpis={googleKpis}
           />
         )}
+      </div>
+
+      {/* Tabela de posicionamento — colunas mudam conforme o tipo */}
+      <div className="mt-2 flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-bold text-foreground">Posicionamento de Campanhas</h3>
+          <div className="inline-flex items-center rounded-xl border border-border bg-card p-1 shadow-sm text-xs font-semibold gap-0.5">
+            <button
+              onClick={() => setTableType("consignacao")}
+              className={`px-3 py-1.5 rounded-lg transition-all ${tableType === "consignacao" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              Consignação
+            </button>
+            <button
+              onClick={() => setTableType("trafego")}
+              className={`px-3 py-1.5 rounded-lg transition-all ${tableType === "trafego" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              Tráfego
+            </button>
+          </div>
+        </div>
+        <div className="rounded-lg border border-border overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border bg-muted/40">
+                <th className="px-4 py-2.5 text-left text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Campanha</th>
+                <th className="px-4 py-2.5 text-right text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Gasto</th>
+                <th className="px-4 py-2.5 text-right text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+                  {tableType === "trafego" ? "Cliques" : "Leads"}
+                </th>
+                <th className="px-4 py-2.5 text-right text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+                  {tableType === "trafego" ? "CPC" : "CPL"}
+                </th>
+                <th className="px-4 py-2.5 text-right text-[11px] font-bold uppercase tracking-wide text-muted-foreground">CTR</th>
+                <th className="px-4 py-2.5 text-left text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {metaAdsAnalysis
+                .filter((r) => r.type === tableType)
+                .map((row, i) => (
+                  <tr key={i} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+                    <td className="px-4 py-3 font-medium text-foreground text-[13px]">{row.campaign}</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-[13px] text-muted-foreground">{row.gasto}</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-[13px] text-muted-foreground">{row.conv.toLocaleString("pt-BR")}</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-[13px] text-muted-foreground">{row.cpl}</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-[13px] text-muted-foreground">{row.ctr}</td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                        row.status === "Otimo" ? "bg-[#12b886]/10 text-[#12b886]" :
+                        row.status === "Bom"   ? "bg-[#4c6ef5]/10 text-[#4c6ef5]" :
+                                                 "bg-[#ff6b6b]/10 text-[#ff6b6b]"
+                      }`}>{row.status}</span>
+                    </td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
   )
